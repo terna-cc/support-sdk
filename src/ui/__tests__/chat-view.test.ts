@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createChatView, type ChatView } from '../chat-view';
 import type { ChatManager } from '../../chat/chat-manager';
+import { createAttachmentManager } from '../../chat/attachment-manager';
 import type { ReportSummary } from '../../types';
 import { getTranslations } from '../../i18n/translations';
+
+// Mock URL.createObjectURL and revokeObjectURL
+const originalCreateObjectURL = URL.createObjectURL;
+const originalRevokeObjectURL = URL.revokeObjectURL;
 
 function makeMockChatManager(
   overrides: Partial<ChatManager> = {},
@@ -34,6 +39,11 @@ const mockSummary: ReportSummary = {
   tags: ['candidates', 'form'],
 };
 
+function createMockFile(name: string, size: number, type: string): File {
+  const buffer = new ArrayBuffer(size);
+  return new File([buffer], name, { type });
+}
+
 describe('createChatView', () => {
   let chatView: ChatView;
   let mockManager: ChatManager;
@@ -42,6 +52,9 @@ describe('createChatView', () => {
   let onKeepChatting: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    URL.revokeObjectURL = vi.fn();
+
     mockManager = makeMockChatManager();
     onSubmit = vi.fn().mockResolvedValue(undefined);
     onCancel = vi.fn();
@@ -60,6 +73,8 @@ describe('createChatView', () => {
 
   afterEach(() => {
     chatView.destroy();
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   describe('getContainer()', () => {
@@ -516,6 +531,316 @@ describe('createChatView', () => {
 
       // After finalize, should be rendered markdown
       expect(bubble?.innerHTML).toContain('<strong>bold</strong>');
+    });
+  });
+
+  describe('attachments', () => {
+    it('does not render attachment button when no attachment manager', () => {
+      const container = chatView.getContainer();
+      const attachBtn = container.querySelector('.chat-attach-btn');
+      expect(attachBtn).toBeNull();
+    });
+
+    it('renders attachment button when attachment manager is provided', () => {
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        createAttachmentManager(),
+      );
+
+      const container = viewWithAttachments.getContainer();
+      const attachBtn = container.querySelector('.chat-attach-btn');
+      expect(attachBtn).not.toBeNull();
+      expect(attachBtn?.getAttribute('aria-label')).toBe('Attach files');
+
+      viewWithAttachments.destroy();
+    });
+
+    it('renders hidden file input when attachment manager is provided', () => {
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        createAttachmentManager(),
+      );
+
+      const container = viewWithAttachments.getContainer();
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      expect(fileInput).not.toBeNull();
+      expect(fileInput.style.display).toBe('none');
+      expect(fileInput.multiple).toBe(true);
+
+      viewWithAttachments.destroy();
+    });
+
+    it('shows file preview bar when files are added via file input', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      // Simulate file input change
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = createMockFile('test.png', 1024, 'image/png');
+      Object.defineProperty(fileInput, 'files', { value: [file] });
+      fileInput.dispatchEvent(new Event('change'));
+
+      const previewBar = container.querySelector('.attachment-preview-bar');
+      expect(previewBar).not.toBeNull();
+
+      const previewItems = container.querySelectorAll(
+        '.attachment-preview-item',
+      );
+      expect(previewItems).toHaveLength(1);
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('shows remove button on preview items', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      // Add a file via file input
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = createMockFile('test.txt', 100, 'text/plain');
+      Object.defineProperty(fileInput, 'files', { value: [file] });
+      fileInput.dispatchEvent(new Event('change'));
+
+      const removeBtn = container.querySelector('.attachment-remove-btn');
+      expect(removeBtn).not.toBeNull();
+      expect(removeBtn?.getAttribute('aria-label')).toBe('Remove test.txt');
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('removes attachment when remove button is clicked', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      // Add file
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = createMockFile('test.txt', 100, 'text/plain');
+      Object.defineProperty(fileInput, 'files', { value: [file] });
+      fileInput.dispatchEvent(new Event('change'));
+
+      expect(attachMgr.getAll()).toHaveLength(1);
+
+      // Click remove
+      const removeBtn = container.querySelector(
+        '.attachment-remove-btn',
+      ) as HTMLButtonElement;
+      removeBtn.click();
+
+      expect(attachMgr.getAll()).toHaveLength(0);
+      expect(container.querySelector('.attachment-preview-bar')).toBeNull();
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('shows image thumbnail for image attachments', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = createMockFile('photo.jpg', 1024, 'image/jpeg');
+      Object.defineProperty(fileInput, 'files', { value: [file] });
+      fileInput.dispatchEvent(new Event('change'));
+
+      const thumbnail = container.querySelector('.attachment-thumbnail');
+      expect(thumbnail).not.toBeNull();
+      expect((thumbnail as HTMLImageElement).src).toContain('blob:mock-url');
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('shows file icon for non-image attachments', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = createMockFile('log.txt', 100, 'text/plain');
+      Object.defineProperty(fileInput, 'files', { value: [file] });
+      fileInput.dispatchEvent(new Event('change'));
+
+      const iconEl = container.querySelector('.attachment-icon');
+      expect(iconEl).not.toBeNull();
+      expect(container.querySelector('.attachment-thumbnail')).toBeNull();
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('shows error for invalid files', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      const fileInput = container.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = createMockFile(
+        'script.exe',
+        100,
+        'application/x-msdownload',
+      );
+      Object.defineProperty(fileInput, 'files', { value: [file] });
+      fileInput.dispatchEvent(new Event('change'));
+
+      const errorEl = container.querySelector('.chat-error');
+      expect(errorEl).not.toBeNull();
+      expect(errorEl?.textContent).toContain('not allowed');
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('adds drag-over class on dragenter', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      // jsdom doesn't have DragEvent, so use Event with cancelable
+      const dragEvent = new Event('dragenter', {
+        bubbles: true,
+        cancelable: true,
+      });
+      container.dispatchEvent(dragEvent);
+
+      expect(container.classList.contains('drag-over')).toBe(true);
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('removes drag-over class on dragleave', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      const container = viewWithAttachments.getContainer();
+      document.body.appendChild(container);
+
+      container.dispatchEvent(
+        new Event('dragenter', { bubbles: true, cancelable: true }),
+      );
+      container.dispatchEvent(
+        new Event('dragleave', { bubbles: true, cancelable: true }),
+      );
+
+      expect(container.classList.contains('drag-over')).toBe(false);
+
+      container.remove();
+      viewWithAttachments.destroy();
+    });
+
+    it('getAttachmentManager returns the manager', () => {
+      const attachMgr = createAttachmentManager();
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        attachMgr,
+      );
+
+      expect(viewWithAttachments.getAttachmentManager()).toBe(attachMgr);
+
+      viewWithAttachments.destroy();
+    });
+
+    it('getAttachmentManager returns null when no manager', () => {
+      expect(chatView.getAttachmentManager()).toBeNull();
+    });
+
+    it('disables attachment button when input is disabled', () => {
+      const viewWithAttachments = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('en'),
+        createAttachmentManager(),
+      );
+
+      viewWithAttachments.setInputEnabled(false);
+
+      const container = viewWithAttachments.getContainer();
+      const attachBtn = container.querySelector(
+        '.chat-attach-btn',
+      ) as HTMLButtonElement;
+      expect(attachBtn.disabled).toBe(true);
+
+      viewWithAttachments.destroy();
     });
   });
 

@@ -4,6 +4,7 @@ export { SDK_VERSION } from './version';
 export type {
   SupportSDKConfig,
   AuthConfig,
+  AttachmentConfig,
   CaptureConfig,
   BufferConfig,
   PrivacyConfig,
@@ -15,6 +16,7 @@ export type {
   BrowserInfo,
   Breadcrumb,
   ErrorInfo,
+  AttachmentMetadata,
   DiagnosticReport,
   ChatConfig,
   ChatMessage,

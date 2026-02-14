@@ -1,4 +1,5 @@
 import type { AuthConfig, DiagnosticReport } from '../types';
+import type { Attachment } from '../chat/attachment-manager';
 
 export interface TransportConfig {
   endpoint: string;
@@ -20,6 +21,7 @@ export interface Transport {
   sendReport(
     report: DiagnosticReport,
     screenshot?: Blob,
+    attachments?: Attachment[],
   ): Promise<TransportResult>;
 }
 
@@ -85,12 +87,19 @@ export function createTransport(config: TransportConfig): Transport {
     async sendReport(
       report: DiagnosticReport,
       screenshot?: Blob,
+      attachments?: Attachment[],
     ): Promise<TransportResult> {
       const formData = new FormData();
       formData.append('report', JSON.stringify(report));
 
       if (screenshot) {
         formData.append('screenshot', screenshot, 'screenshot.jpg');
+      }
+
+      if (attachments && attachments.length > 0) {
+        for (const attachment of attachments) {
+          formData.append('attachments', attachment.file, attachment.name);
+        }
       }
 
       let authHeaders: Headers;
