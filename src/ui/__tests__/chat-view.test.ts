@@ -39,11 +39,7 @@ const mockSummary: ReportSummary = {
   tags: ['candidates', 'form'],
 };
 
-function createMockFile(
-  name: string,
-  size: number,
-  type: string,
-): File {
+function createMockFile(name: string, size: number, type: string): File {
   const buffer = new ArrayBuffer(size);
   return new File([buffer], name, { type });
 }

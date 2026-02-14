@@ -124,7 +124,8 @@ export function createAttachmentManager(
       }
 
       // Check total size
-      const currentTotal = getTotalSize() + added.reduce((s, a) => s + a.size, 0);
+      const currentTotal =
+        getTotalSize() + added.reduce((s, a) => s + a.size, 0);
       if (currentTotal + file.size > maxTotalSize) {
         errors.push({
           file,

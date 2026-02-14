@@ -1,10 +1,7 @@
 import { chatStyles } from './styles';
 import type { ChatMessage, ReportSummary } from '../types';
 import type { ChatManager } from '../chat/chat-manager';
-import type {
-  AttachmentManager,
-  Attachment,
-} from '../chat/attachment-manager';
+import type { AttachmentManager, Attachment } from '../chat/attachment-manager';
 import { formatFileSize } from '../chat/attachment-manager';
 import { renderMarkdown } from '../core/markdown';
 import type { Translations } from '../i18n/translations';
@@ -313,7 +310,9 @@ export function createChatView(
       const chipsContainer = el('div', 'attachment-chips');
       for (const attachment of messageAttachments) {
         const chip = el('div', 'attachment-chip');
-        const icon = document.createTextNode(getFileIcon(attachment.type) + ' ');
+        const icon = document.createTextNode(
+          getFileIcon(attachment.type) + ' ',
+        );
         chip.appendChild(icon);
         const nameSpan = el('span', 'attachment-chip-name');
         nameSpan.textContent = truncateFilename(attachment.name);

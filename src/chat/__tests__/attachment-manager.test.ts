@@ -19,11 +19,7 @@ afterEach(() => {
   URL.revokeObjectURL = originalRevokeObjectURL;
 });
 
-function createMockFile(
-  name: string,
-  size: number,
-  type: string,
-): File {
+function createMockFile(name: string, size: number, type: string): File {
   const buffer = new ArrayBuffer(size);
   return new File([buffer], name, { type });
 }
@@ -122,14 +118,10 @@ describe('createAttachmentManager', () => {
         maxTotalSize: 500,
       });
 
-      const result1 = manager.add([
-        createMockFile('a.png', 400, 'image/png'),
-      ]);
+      const result1 = manager.add([createMockFile('a.png', 400, 'image/png')]);
       expect(result1.added).toHaveLength(1);
 
-      const result2 = manager.add([
-        createMockFile('b.png', 200, 'image/png'),
-      ]);
+      const result2 = manager.add([createMockFile('b.png', 200, 'image/png')]);
       expect(result2.added).toHaveLength(0);
       expect(result2.errors).toHaveLength(1);
       expect(result2.errors[0].reason).toContain('Total attachment size');
@@ -324,9 +316,7 @@ describe('createAttachmentManager', () => {
       manager.add([createMockFile('a.png', 5 * 1024 * 1024, 'image/png')]);
       manager.add([createMockFile('b.png', 5 * 1024 * 1024, 'image/png')]);
       // Total is exactly 10MB — adding one more byte should fail
-      const result = manager.add([
-        createMockFile('c.png', 1, 'image/png'),
-      ]);
+      const result = manager.add([createMockFile('c.png', 1, 'image/png')]);
 
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].reason).toContain('Total attachment size');
@@ -340,9 +330,7 @@ describe('createAttachmentManager', () => {
 
       for (const type of DEFAULT_ALLOWED_TYPES) {
         const ext = type.split('/')[1] || 'dat';
-        const result = manager.add([
-          createMockFile(`test.${ext}`, 100, type),
-        ]);
+        const result = manager.add([createMockFile(`test.${ext}`, 100, type)]);
         expect(result.errors).toHaveLength(0);
       }
     });

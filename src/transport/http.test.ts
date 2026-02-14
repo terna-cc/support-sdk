@@ -579,7 +579,11 @@ describe('createTransport', () => {
         },
       ];
 
-      const promise = transport.sendReport(makeReport(), undefined, attachments);
+      const promise = transport.sendReport(
+        makeReport(),
+        undefined,
+        attachments,
+      );
       await vi.advanceTimersByTimeAsync(0);
       await promise;
 
