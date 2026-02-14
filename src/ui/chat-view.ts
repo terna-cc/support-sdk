@@ -1,6 +1,11 @@
 import { chatStyles } from './styles';
 import type { ChatMessage, ReportSummary } from '../types';
 import type { ChatManager } from '../chat/chat-manager';
+import type {
+  AttachmentManager,
+  Attachment,
+} from '../chat/attachment-manager';
+import { formatFileSize } from '../chat/attachment-manager';
 import { renderMarkdown } from '../core/markdown';
 import type { Translations } from '../i18n/translations';
 
@@ -27,6 +32,7 @@ export interface ChatView {
   finalizeAssistantMessage(): void;
   addUserMessage(content: string): void;
   setInputEnabled(enabled: boolean): void;
+  getAttachmentManager(): AttachmentManager | null;
   destroy(): void;
 }
 
@@ -55,6 +61,23 @@ function getCategoryLabels(t: Translations): Record<string, string> {
   };
 }
 
+function truncateFilename(name: string, maxLen: number = 25): string {
+  if (name.length <= maxLen) return name;
+  const ext = name.lastIndexOf('.');
+  if (ext === -1) return name.slice(0, maxLen - 3) + '...';
+  const extension = name.slice(ext);
+  const base = name.slice(0, maxLen - extension.length - 3);
+  return base + '...' + extension;
+}
+
+function getFileIcon(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return '\u{1F5BC}\uFE0F'; // 🖼️
+  if (mimeType === 'application/pdf') return '\u{1F4C4}'; // 📄
+  if (mimeType.startsWith('text/')) return '\u{1F4CB}'; // 📋
+  if (mimeType === 'application/json') return '\u{1F4CB}'; // 📋
+  return '\u{1F4C4}'; // 📄
+}
+
 // ─── Send icon SVG ──────────────────────────────────────────────────
 
 function createSendIcon(): SVGSVGElement {
@@ -81,12 +104,33 @@ function createSendIcon(): SVGSVGElement {
   return svg;
 }
 
+// ─── Attachment icon SVG (paperclip) ────────────────────────────────
+
+function createAttachmentIcon(): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'chat-attachment-icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute(
+    'd',
+    'M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48',
+  );
+  svg.appendChild(path);
+  return svg;
+}
+
 // ─── Main factory ──────────────────────────────────────────────────
 
 export function createChatView(
   chatManager: ChatManager,
   callbacks: ChatViewCallbacks,
   translations: Translations,
+  attachmentManager?: AttachmentManager,
 ): ChatView {
   // Root container
   const container = el('div', 'chat-container');
@@ -113,8 +157,54 @@ export function createChatView(
   // ── Error area ──
   let errorEl: HTMLElement | null = null;
 
+  // ── Attachment preview bar (above input area) ──
+  let attachmentPreviewBar: HTMLElement | null = null;
+
+  // ── File input (hidden) ──
+  let fileInput: HTMLInputElement | null = null;
+
+  // ── Build allowed types accept attribute ──
+  const acceptTypes = attachmentManager
+    ? (() => {
+        // We pull the allowed types from the manager's configuration indirectly
+        // by just using a broad accept string. Validation is done by the manager.
+        return 'image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain,text/csv,application/json,text/xml';
+      })()
+    : '';
+
+  if (attachmentManager) {
+    fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.accept = acceptTypes;
+    fileInput.style.display = 'none';
+    fileInput.setAttribute('aria-hidden', 'true');
+    container.appendChild(fileInput);
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput?.files && fileInput.files.length > 0) {
+        handleFilesAdded(fileInput.files);
+        fileInput.value = '';
+      }
+    });
+  }
+
   // ── Input area ──
   const inputArea = el('div', 'chat-input-area');
+
+  // ── Attachment button ──
+  let attachBtn: HTMLButtonElement | null = null;
+  if (attachmentManager) {
+    attachBtn = el('button', 'chat-attach-btn');
+    attachBtn.type = 'button';
+    attachBtn.setAttribute('aria-label', 'Attach files');
+    attachBtn.appendChild(createAttachmentIcon());
+    inputArea.appendChild(attachBtn);
+
+    attachBtn.addEventListener('click', () => {
+      fileInput?.click();
+    });
+  }
 
   const chatInput = el('textarea', 'chat-input');
   chatInput.placeholder = translations.inputPlaceholder;
@@ -130,6 +220,40 @@ export function createChatView(
   inputArea.appendChild(chatInput);
   inputArea.appendChild(sendBtn);
   container.appendChild(inputArea);
+
+  // ── Drag and drop ──
+  if (attachmentManager) {
+    let dragCounter = 0;
+
+    container.addEventListener('dragenter', (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter++;
+      container.classList.add('drag-over');
+    });
+
+    container.addEventListener('dragleave', (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        container.classList.remove('drag-over');
+      }
+    });
+
+    container.addEventListener('dragover', (e: DragEvent) => {
+      e.preventDefault();
+    });
+
+    container.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      container.classList.remove('drag-over');
+
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        handleFilesAdded(e.dataTransfer.files);
+      }
+    });
+  }
 
   // ── Summary view (hidden initially) ──
   let summaryContainer: HTMLElement | null = null;
@@ -157,26 +281,130 @@ export function createChatView(
     const content = chatInput.value.trim();
     if (!content || chatInput.disabled) return;
 
+    // Capture current attachments for display in the message
+    const currentAttachments = attachmentManager?.getAll() ?? [];
+
     chatInput.value = '';
     chatInput.style.height = 'auto';
     sendBtn.disabled = true;
 
     clearError();
-    addUserMessage(content);
+    addUserMessage(content, currentAttachments);
     chatManager.sendMessage(content);
+
+    // Clear attachments after sending (but don't destroy — they stay for submission)
+    // Attachments are kept in the manager for final report submission
   }
 
   function scrollToBottom(): void {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  function addUserMessage(content: string): void {
+  function addUserMessage(
+    content: string,
+    messageAttachments?: Attachment[],
+  ): void {
     const msg = el('div', 'chat-message user');
     const bubble = el('div', 'chat-bubble');
     bubble.textContent = content;
+
+    // Render attachment chips in the message bubble
+    if (messageAttachments && messageAttachments.length > 0) {
+      const chipsContainer = el('div', 'attachment-chips');
+      for (const attachment of messageAttachments) {
+        const chip = el('div', 'attachment-chip');
+        const icon = document.createTextNode(getFileIcon(attachment.type) + ' ');
+        chip.appendChild(icon);
+        const nameSpan = el('span', 'attachment-chip-name');
+        nameSpan.textContent = truncateFilename(attachment.name);
+        chip.appendChild(nameSpan);
+        const sizeSpan = el('span', 'attachment-chip-size');
+        sizeSpan.textContent = ` (${formatFileSize(attachment.size)})`;
+        chip.appendChild(sizeSpan);
+        chipsContainer.appendChild(chip);
+      }
+      bubble.appendChild(chipsContainer);
+    }
+
     msg.appendChild(bubble);
     messagesContainer.appendChild(msg);
     scrollToBottom();
+  }
+
+  function handleFilesAdded(files: FileList): void {
+    if (!attachmentManager) return;
+
+    clearError();
+    const result = attachmentManager.add(files);
+
+    // Show errors if any
+    if (result.errors.length > 0) {
+      const errorMessages = result.errors.map(
+        (e) => `${e.file.name}: ${e.reason}`,
+      );
+      showError(errorMessages.join('; '));
+    }
+
+    renderAttachmentPreviewBar();
+  }
+
+  function renderAttachmentPreviewBar(): void {
+    if (!attachmentManager) return;
+
+    const attachments = attachmentManager.getAll();
+
+    // Remove existing bar
+    if (attachmentPreviewBar) {
+      attachmentPreviewBar.remove();
+      attachmentPreviewBar = null;
+    }
+
+    if (attachments.length === 0) return;
+
+    attachmentPreviewBar = el('div', 'attachment-preview-bar');
+
+    for (const attachment of attachments) {
+      const item = el('div', 'attachment-preview-item');
+
+      // Thumbnail or icon
+      if (attachment.previewUrl) {
+        const thumb = el('img', 'attachment-thumbnail');
+        thumb.src = attachment.previewUrl;
+        thumb.alt = attachment.name;
+        item.appendChild(thumb);
+      } else {
+        const iconEl = el('span', 'attachment-icon');
+        iconEl.textContent = getFileIcon(attachment.type);
+        item.appendChild(iconEl);
+      }
+
+      // Filename
+      const nameEl = el('span', 'attachment-name');
+      nameEl.textContent = truncateFilename(attachment.name);
+      nameEl.title = attachment.name;
+      item.appendChild(nameEl);
+
+      // Size
+      const sizeEl = el('span', 'attachment-size');
+      sizeEl.textContent = `(${formatFileSize(attachment.size)})`;
+      item.appendChild(sizeEl);
+
+      // Remove button
+      const removeBtn = el('button', 'attachment-remove-btn');
+      removeBtn.type = 'button';
+      removeBtn.setAttribute('aria-label', `Remove ${attachment.name}`);
+      removeBtn.textContent = '\u2715'; // ✕
+      removeBtn.addEventListener('click', () => {
+        attachmentManager!.remove(attachment.id);
+        renderAttachmentPreviewBar();
+      });
+      item.appendChild(removeBtn);
+
+      attachmentPreviewBar.appendChild(item);
+    }
+
+    // Insert before input area
+    container.insertBefore(attachmentPreviewBar, inputArea);
   }
 
   function createAssistantMessage(): HTMLElement {
@@ -257,8 +485,9 @@ export function createChatView(
     clearError();
     errorEl = el('div', 'chat-error');
     errorEl.textContent = message;
-    // Insert before input area
-    container.insertBefore(errorEl, inputArea);
+    // Insert before attachment bar or input area
+    const insertBefore = attachmentPreviewBar ?? inputArea;
+    container.insertBefore(errorEl, insertBefore);
   }
 
   function clearError(): void {
@@ -271,6 +500,9 @@ export function createChatView(
   function setInputEnabled(enabled: boolean): void {
     chatInput.disabled = !enabled;
     sendBtn.disabled = !enabled || chatInput.value.trim() === '';
+    if (attachBtn) {
+      attachBtn.disabled = !enabled;
+    }
   }
 
   function showChat(): void {
@@ -287,6 +519,9 @@ export function createChatView(
     // Show messages and input
     messagesContainer.style.display = 'flex';
     inputArea.style.display = 'flex';
+    if (attachmentPreviewBar) {
+      attachmentPreviewBar.style.display = 'flex';
+    }
     scrollToBottom();
   }
 
@@ -298,6 +533,9 @@ export function createChatView(
     // Hide chat view
     messagesContainer.style.display = 'none';
     inputArea.style.display = 'none';
+    if (attachmentPreviewBar) {
+      attachmentPreviewBar.style.display = 'none';
+    }
     clearError();
 
     // Build summary container
@@ -441,7 +679,16 @@ export function createChatView(
     return container;
   }
 
+  function getAttachmentManagerRef(): AttachmentManager | null {
+    return attachmentManager ?? null;
+  }
+
   function destroy(): void {
+    attachmentManager?.destroy();
+    if (attachmentPreviewBar) {
+      attachmentPreviewBar.remove();
+      attachmentPreviewBar = null;
+    }
     container.remove();
     currentStreamingBubble = null;
     currentStreamingCursor = null;
@@ -464,6 +711,7 @@ export function createChatView(
     finalizeAssistantMessage,
     addUserMessage,
     setInputEnabled,
+    getAttachmentManager: getAttachmentManagerRef,
     destroy,
   };
 }

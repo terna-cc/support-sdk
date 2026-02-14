@@ -8,8 +8,10 @@ import type {
   ErrorInfo,
   DiagnosticReport,
   DiagnosticSnapshot,
+  AttachmentMetadata,
 } from '../types';
 import type { ChatManager } from '../chat/chat-manager';
+import type { AttachmentManager, Attachment } from '../chat/attachment-manager';
 import { createChatView, type ChatView } from './chat-view';
 import type { Translations } from '../i18n/translations';
 
@@ -28,6 +30,7 @@ export interface ModalCallbacks {
   onSubmit: (data: {
     report: DiagnosticReport;
     screenshot?: Blob;
+    attachments?: Attachment[];
   }) => Promise<void>;
   onCancel: () => void;
 }
@@ -38,6 +41,7 @@ export interface ReviewModal {
   destroy(): void;
   setChatManager(manager: ChatManager | null): void;
   setChatEnabled(enabled: boolean): void;
+  setAttachmentManager(manager: AttachmentManager | null): void;
 }
 
 // ─── Category definition ───────────────────────────────────────────
@@ -208,6 +212,9 @@ export function createReviewModal(
   let chatManager: ChatManager | null = null;
   let chatEnabled = false;
   let chatView: ChatView | null = null;
+
+  // Attachment support
+  let attachmentMgr: AttachmentManager | null = null;
 
   // Track checkbox state per category key
   const checkedState = new Map<string, boolean>();
@@ -407,12 +414,30 @@ export function createReviewModal(
             ai_summary: aiSummary as unknown as Record<string, unknown>,
           };
 
+          // Include attachment metadata in the report
+          const chatAttachments =
+            chatView?.getAttachmentManager()?.getAll() ?? [];
+          if (chatAttachments.length > 0) {
+            report.attachments = chatAttachments.map(
+              (a): AttachmentMetadata => ({
+                name: a.name,
+                size: a.size,
+                type: a.type,
+              }),
+            );
+          }
+
           const screenshot =
             checkedState.get('screenshot') && currentData.screenshot
               ? currentData.screenshot
               : undefined;
 
-          await callbacks.onSubmit({ report, screenshot });
+          await callbacks.onSubmit({
+            report,
+            screenshot,
+            attachments:
+              chatAttachments.length > 0 ? chatAttachments : undefined,
+          });
 
           // Close after brief delay on success
           setTimeout(() => closeFn(), 1500);
@@ -429,6 +454,7 @@ export function createReviewModal(
         },
       },
       translations,
+      attachmentMgr ?? undefined,
     );
 
     content.appendChild(chatView.getContainer());
@@ -832,5 +858,16 @@ export function createReviewModal(
     chatEnabled = enabled;
   }
 
-  return { open, close, destroy, setChatManager, setChatEnabled };
+  function setAttachmentManager(manager: AttachmentManager | null): void {
+    attachmentMgr = manager;
+  }
+
+  return {
+    open,
+    close,
+    destroy,
+    setChatManager,
+    setChatEnabled,
+    setAttachmentManager,
+  };
 }

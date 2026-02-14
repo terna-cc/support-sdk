@@ -1,4 +1,8 @@
 import type { SupportSDKConfig, UserContext, ErrorInfo } from './types';
+import {
+  createAttachmentManager,
+  type AttachmentManager,
+} from './chat/attachment-manager';
 import { Sanitizer } from './core/sanitizer';
 import { createConsoleCapture, type ConsoleCapture } from './capture/console';
 import { createNetworkCapture, type NetworkCapture } from './capture/network';
@@ -53,6 +57,7 @@ export class SupportSDK {
   private trigger: TriggerButton | null = null;
   private toast: Toast | null = null;
   private chatMgr: ChatManager | null = null;
+  private attachmentMgr: AttachmentManager | null = null;
 
   private userContext: UserContext | null = null;
   private metadata: Record<string, unknown> = {};
@@ -155,14 +160,18 @@ export class SupportSDK {
 
     // 4. Create review modal
     this.modal = createReviewModal(uiConfig, this.translations, {
-      onSubmit: async ({ report, screenshot }) => {
+      onSubmit: async ({ report, screenshot, attachments }) => {
         // Enrich report with SDK-level context
         report.user = this.userContext;
         report.metadata = { ...this.metadata, ...report.metadata };
         report.sdk_version = SDK_VERSION;
         report.captured_at = new Date().toISOString();
 
-        const result = await this.transport!.sendReport(report, screenshot);
+        const result = await this.transport!.sendReport(
+          report,
+          screenshot,
+          attachments,
+        );
         if (!result.success) {
           throw new Error(result.error?.message ?? 'Failed to send report');
         }
@@ -171,6 +180,16 @@ export class SupportSDK {
         this.frozenErrorInfo = null;
       },
     });
+
+    // 4a. Create attachment manager if attachments are enabled
+    const attachmentConfig =
+      typeof captureConfig.attachments === 'object'
+        ? captureConfig.attachments
+        : {};
+    if (attachmentConfig.enabled !== false) {
+      this.attachmentMgr = createAttachmentManager(attachmentConfig);
+      this.modal.setAttachmentManager(this.attachmentMgr);
+    }
 
     // 4b. Create chat manager if chat is enabled
     const chatConfig = this.config.chat ?? {};
@@ -368,6 +387,7 @@ export class SupportSDK {
     this.modal?.destroy();
     this.toast?.destroy();
     this.chatMgr?.destroy();
+    this.attachmentMgr?.destroy();
 
     // Null out references
     this.consoleCapture = null;
@@ -380,6 +400,7 @@ export class SupportSDK {
     this.trigger = null;
     this.toast = null;
     this.chatMgr = null;
+    this.attachmentMgr = null;
     this.sanitizer = null;
     this.frozenErrorInfo = null;
 

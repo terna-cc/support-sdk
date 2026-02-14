@@ -538,6 +538,153 @@ describe('createTransport', () => {
     }
   });
 
+  describe('sendReport — attachments', () => {
+    it('includes attachment files in FormData', async () => {
+      let capturedBody: FormData | undefined;
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_url: string, init: RequestInit) => {
+          capturedBody = init.body as FormData;
+          return Promise.resolve(
+            new Response(JSON.stringify({ id: 'r-attach' }), { status: 201 }),
+          );
+        }),
+      );
+
+      const transport = createTransport({
+        endpoint: 'https://api.test.com',
+        auth: { type: 'none' },
+      });
+
+      const file1 = new File(['content1'], 'log.txt', { type: 'text/plain' });
+      const file2 = new File(['content2'], 'error.json', {
+        type: 'application/json',
+      });
+
+      const attachments = [
+        {
+          id: 'a1',
+          file: file1,
+          name: 'log.txt',
+          size: 8,
+          type: 'text/plain',
+        },
+        {
+          id: 'a2',
+          file: file2,
+          name: 'error.json',
+          size: 8,
+          type: 'application/json',
+        },
+      ];
+
+      const promise = transport.sendReport(makeReport(), undefined, attachments);
+      await vi.advanceTimersByTimeAsync(0);
+      await promise;
+
+      const allAttachments = capturedBody!.getAll('attachments');
+      expect(allAttachments).toHaveLength(2);
+      expect(allAttachments[0]).toBeInstanceOf(File);
+      expect(allAttachments[1]).toBeInstanceOf(File);
+    });
+
+    it('does not include attachments field when no attachments', async () => {
+      let capturedBody: FormData | undefined;
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_url: string, init: RequestInit) => {
+          capturedBody = init.body as FormData;
+          return Promise.resolve(
+            new Response(JSON.stringify({ id: 'r-no-attach' }), {
+              status: 201,
+            }),
+          );
+        }),
+      );
+
+      const transport = createTransport({
+        endpoint: 'https://api.test.com',
+        auth: { type: 'none' },
+      });
+
+      const promise = transport.sendReport(makeReport());
+      await vi.advanceTimersByTimeAsync(0);
+      await promise;
+
+      expect(capturedBody!.getAll('attachments')).toHaveLength(0);
+    });
+
+    it('does not include attachments field when empty array', async () => {
+      let capturedBody: FormData | undefined;
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_url: string, init: RequestInit) => {
+          capturedBody = init.body as FormData;
+          return Promise.resolve(
+            new Response(JSON.stringify({ id: 'r-empty' }), { status: 201 }),
+          );
+        }),
+      );
+
+      const transport = createTransport({
+        endpoint: 'https://api.test.com',
+        auth: { type: 'none' },
+      });
+
+      const promise = transport.sendReport(makeReport(), undefined, []);
+      await vi.advanceTimersByTimeAsync(0);
+      await promise;
+
+      expect(capturedBody!.getAll('attachments')).toHaveLength(0);
+    });
+
+    it('sends both screenshot and attachments', async () => {
+      let capturedBody: FormData | undefined;
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_url: string, init: RequestInit) => {
+          capturedBody = init.body as FormData;
+          return Promise.resolve(
+            new Response(JSON.stringify({ id: 'r-both' }), { status: 201 }),
+          );
+        }),
+      );
+
+      const transport = createTransport({
+        endpoint: 'https://api.test.com',
+        auth: { type: 'none' },
+      });
+
+      const screenshot = new Blob(['img'], { type: 'image/jpeg' });
+      const file = new File(['data'], 'data.csv', { type: 'text/csv' });
+      const attachments = [
+        {
+          id: 'a1',
+          file,
+          name: 'data.csv',
+          size: 4,
+          type: 'text/csv',
+        },
+      ];
+
+      const promise = transport.sendReport(
+        makeReport(),
+        screenshot,
+        attachments,
+      );
+      await vi.advanceTimersByTimeAsync(0);
+      await promise;
+
+      expect(capturedBody!.get('screenshot')).toBeInstanceOf(File);
+      expect(capturedBody!.getAll('attachments')).toHaveLength(1);
+      expect(capturedBody!.get('report')).toBeTruthy();
+    });
+  });
+
   describe('sendReport — network errors', () => {
     it('handles network failure gracefully', async () => {
       vi.stubGlobal(

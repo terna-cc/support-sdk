@@ -21,11 +21,20 @@ export type AuthConfig =
 
 // ─── Capture ─────────────────────────────────────────────────────────
 
+export interface AttachmentConfig {
+  enabled?: boolean;
+  maxFiles?: number;
+  maxFileSize?: number;
+  maxTotalSize?: number;
+  allowedTypes?: string[];
+}
+
 export interface CaptureConfig {
   console?: false | (BufferConfig & { levels?: ConsoleLevel[] });
   network?: false | (BufferConfig & { urlFilter?: (url: string) => boolean });
   breadcrumbs?: false | BufferConfig;
   screenshot?: boolean;
+  attachments?: AttachmentConfig;
 }
 
 export interface BufferConfig {
@@ -127,6 +136,14 @@ export interface ErrorInfo {
   timestamp: number;
 }
 
+// ─── Attachment Metadata ──────────────────────────────────────────────
+
+export interface AttachmentMetadata {
+  name: string;
+  size: number;
+  type: string;
+}
+
 // ─── Diagnostic Report (the full payload) ────────────────────────────
 
 export interface DiagnosticReport {
@@ -138,6 +155,7 @@ export interface DiagnosticReport {
   browser: BrowserInfo;
   screenshot: string | null;
   errors: ErrorInfo[];
+  attachments?: AttachmentMetadata[];
   user: UserContext | null;
   metadata: Record<string, unknown>;
   sdk_version: string;
