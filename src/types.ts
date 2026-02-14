@@ -121,6 +121,7 @@ export interface ErrorInfo {
   source?: string;
   line?: number;
   column?: number;
+  type: 'error' | 'unhandledrejection';
   timestamp: number;
 }
 
