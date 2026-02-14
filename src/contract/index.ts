@@ -20,4 +20,6 @@ export interface ReportListResponse {
     createdAt: string;
   }[];
   total: number;
+  page: number;
+  perPage: number;
 }
