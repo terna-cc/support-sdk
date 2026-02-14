@@ -37,12 +37,16 @@ export function createConsoleCapture(
     for (const level of LEVELS) {
       originals.set(level, console[level] as (...args: unknown[]) => void);
 
-      (console as unknown as Record<string, unknown>)[level] = (...args: unknown[]) => {
+      (console as unknown as Record<string, unknown>)[level] = (
+        ...args: unknown[]
+      ) => {
         const original = originals.get(level)!;
         original.apply(console, args);
 
         const message = sanitizer.sanitizeString(stringify(args[0] ?? ''));
-        const rest = args.slice(1).map((a) => sanitizer.sanitizeString(stringify(a)));
+        const rest = args
+          .slice(1)
+          .map((a) => sanitizer.sanitizeString(stringify(a)));
 
         const entry: ConsoleEntry = {
           level,

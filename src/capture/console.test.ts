@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createConsoleCapture } from './console';
 import { Sanitizer } from '../core/sanitizer';
-import type { ConsoleLevel } from '../types';
 
 describe('createConsoleCapture', () => {
   let sanitizer: Sanitizer;
@@ -89,7 +88,10 @@ describe('createConsoleCapture', () => {
     const capture = createConsoleCapture(sanitizer, 50);
     capture.start();
 
-    console.log('email: user@example.com', 'token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig');
+    console.log(
+      'email: user@example.com',
+      'token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig',
+    );
 
     const entries = capture.getEntries();
     expect(entries[0].message).toContain('[REDACTED:email]');
