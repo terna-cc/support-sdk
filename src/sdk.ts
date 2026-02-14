@@ -99,7 +99,8 @@ export class SupportSDK {
     const captureConfig = this.config.capture ?? {};
     const privacyConfig = this.config.privacy ?? {};
     const uiConfig = this.config.ui ?? {};
-    const primaryColor = DEFAULT_PRIMARY_COLOR;
+    const themeConfig = this.config.theme;
+    const primaryColor = themeConfig?.primaryColor ?? DEFAULT_PRIMARY_COLOR;
 
     // 1. Create sanitizer
     this.sanitizer = new Sanitizer({
@@ -185,7 +186,7 @@ export class SupportSDK {
       onClose: () => {
         this.trigger?.show();
       },
-    });
+    }, themeConfig);
 
     // 4a. Create attachment manager if attachments are enabled
     const attachmentConfig =
@@ -214,7 +215,7 @@ export class SupportSDK {
     }
 
     // 5. Create toast
-    this.toast = createToast({ primaryColor });
+    this.toast = createToast({ primaryColor, theme: themeConfig });
 
     // 6. Create error capture
     this.errorCapture = createErrorCapture();
@@ -228,6 +229,7 @@ export class SupportSDK {
         position: uiConfig.triggerPosition ?? 'bottom-right',
         label: uiConfig.triggerLabel ?? this.translations.triggerLabel,
         primaryColor,
+        theme: themeConfig,
         onClick: () => this.triggerReport(),
       });
       this.trigger.mount();
