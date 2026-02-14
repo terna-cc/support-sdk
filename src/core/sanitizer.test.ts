@@ -27,7 +27,8 @@ describe('Sanitizer', () => {
 
     it('redacts multiple patterns in one string', () => {
       const s = new Sanitizer();
-      const input = 'Email: foo@bar.com, JWT: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig';
+      const input =
+        'Email: foo@bar.com, JWT: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig';
       const result = s.sanitizeString(input);
 
       expect(result).toContain('[REDACTED:email]');
@@ -39,9 +40,7 @@ describe('Sanitizer', () => {
         redactPatterns: [/SSN-\d{3}-\d{2}-\d{4}/],
       });
 
-      expect(s.sanitizeString('ID: SSN-123-45-6789')).toBe(
-        'ID: [REDACTED]',
-      );
+      expect(s.sanitizeString('ID: SSN-123-45-6789')).toBe('ID: [REDACTED]');
     });
 
     it('returns unchanged string when nothing matches', () => {

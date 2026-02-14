@@ -16,9 +16,7 @@ export class SupportSDK {
     // TODO: Stop capture modules, remove UI, restore patched globals
   }
 
-  async submitReport(
-    _description: string,
-  ): Promise<DiagnosticReport> {
+  async submitReport(_description: string): Promise<DiagnosticReport> {
     // TODO: Gather data from all capture modules, sanitize, submit
     throw new Error('Not implemented');
   }

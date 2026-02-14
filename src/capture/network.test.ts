@@ -61,9 +61,14 @@ describe('createNetworkCapture', () => {
     });
 
     it('sanitizes URLs', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -101,7 +106,9 @@ describe('createNetworkCapture', () => {
       const entries = capture.getEntries();
       // Authorization should be stripped
       expect(entries[0].requestHeaders).not.toHaveProperty('Authorization');
-      expect(entries[0].requestHeaders['Content-Type']).toBe('application/json');
+      expect(entries[0].requestHeaders['Content-Type']).toBe(
+        'application/json',
+      );
 
       capture.stop();
     });
@@ -191,9 +198,14 @@ describe('createNetworkCapture', () => {
     });
 
     it('records duration', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -209,12 +221,19 @@ describe('createNetworkCapture', () => {
     });
 
     it('excludes SDK own requests', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
-      const capture = createNetworkCapture(sanitizer, 50) as ReturnType<typeof createNetworkCapture> & {
+      const capture = createNetworkCapture(sanitizer, 50) as ReturnType<
+        typeof createNetworkCapture
+      > & {
         setExcludedEndpoint: (endpoint: string) => void;
       };
       capture.setExcludedEndpoint('https://api.support.com/reports');
@@ -240,7 +259,9 @@ describe('createNetworkCapture', () => {
       const capture = createNetworkCapture(sanitizer, 50);
       capture.start();
 
-      await expect(fetch('https://api.example.com/fail')).rejects.toThrow('Network error');
+      await expect(fetch('https://api.example.com/fail')).rejects.toThrow(
+        'Network error',
+      );
 
       const entries = capture.getEntries();
       expect(entries).toHaveLength(1);
@@ -250,9 +271,14 @@ describe('createNetworkCapture', () => {
     });
 
     it('handles fetch with URL object', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -268,9 +294,14 @@ describe('createNetworkCapture', () => {
     });
 
     it('defaults method to GET', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -336,12 +367,14 @@ describe('createNetworkCapture', () => {
       xhrInstances = [];
       RealXHR = globalThis.XMLHttpRequest;
       // Install our fake as the global XMLHttpRequest
-      (globalThis as unknown as Record<string, unknown>).XMLHttpRequest = FakeXHR;
+      (globalThis as unknown as Record<string, unknown>).XMLHttpRequest =
+        FakeXHR;
     });
 
     afterEach(() => {
       // Restore real XMLHttpRequest
-      (globalThis as unknown as Record<string, unknown>).XMLHttpRequest = RealXHR;
+      (globalThis as unknown as Record<string, unknown>).XMLHttpRequest =
+        RealXHR;
     });
 
     it('captures XHR requests with correct metadata', () => {
@@ -353,7 +386,11 @@ describe('createNetworkCapture', () => {
       xhr.send();
 
       // Simulate server response
-      xhrInstances[0]._respond(200, { 'content-type': 'application/json' }, '{"ok":true}');
+      xhrInstances[0]._respond(
+        200,
+        { 'content-type': 'application/json' },
+        '{"ok":true}',
+      );
 
       const entries = capture.getEntries();
       expect(entries).toHaveLength(1);
@@ -384,7 +421,9 @@ describe('createNetworkCapture', () => {
     });
 
     it('excludes SDK own XHR requests', () => {
-      const capture = createNetworkCapture(sanitizer, 50) as ReturnType<typeof createNetworkCapture> & {
+      const capture = createNetworkCapture(sanitizer, 50) as ReturnType<
+        typeof createNetworkCapture
+      > & {
         setExcludedEndpoint: (endpoint: string) => void;
       };
       capture.setExcludedEndpoint('https://api.support.com/reports');
@@ -416,13 +455,19 @@ describe('createNetworkCapture', () => {
       xhr.setRequestHeader('Authorization', 'Bearer secret');
       xhr.send('{"test":true}');
 
-      xhrInstances[0]._respond(200, { 'content-type': 'application/json' }, '{"ok":true}');
+      xhrInstances[0]._respond(
+        200,
+        { 'content-type': 'application/json' },
+        '{"ok":true}',
+      );
 
       const entries = capture.getEntries();
       expect(entries).toHaveLength(1);
       // Authorization should be stripped
       expect(entries[0].requestHeaders).not.toHaveProperty('Authorization');
-      expect(entries[0].requestHeaders['Content-Type']).toBe('application/json');
+      expect(entries[0].requestHeaders['Content-Type']).toBe(
+        'application/json',
+      );
 
       capture.stop();
     });
@@ -430,9 +475,14 @@ describe('createNetworkCapture', () => {
 
   describe('buffer operations', () => {
     it('freeze() returns a copy', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -450,9 +500,14 @@ describe('createNetworkCapture', () => {
     });
 
     it('clear() empties the buffer', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
-      );
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response('ok', {
+            status: 200,
+            headers: { 'content-type': 'text/plain' },
+          }),
+        );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);

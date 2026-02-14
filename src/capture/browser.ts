@@ -64,7 +64,11 @@ export function collectBrowserInfo(): BrowserInfo {
 
   // Chrome-only: performance.memory
   const perf = performance as unknown as {
-    memory?: { jsHeapSizeLimit: number; totalJSHeapSize: number; usedJSHeapSize: number };
+    memory?: {
+      jsHeapSizeLimit: number;
+      totalJSHeapSize: number;
+      usedJSHeapSize: number;
+    };
   };
   if (perf.memory) {
     info.memory = {

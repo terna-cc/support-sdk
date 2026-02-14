@@ -18,14 +18,18 @@ describe('createScreenshotCapture', () => {
 
   afterEach(() => {
     // Clean up any leftover mask overlays
-    document.querySelectorAll('[data-screenshot-mask]').forEach((el) => el.remove());
+    document
+      .querySelectorAll('[data-screenshot-mask]')
+      .forEach((el) => el.remove());
     document.body.innerHTML = '';
   });
 
   // ─── Config defaults ────────────────────────────────────────────
 
   it('applies default config when none is provided', async () => {
-    mockedDomToBlob.mockResolvedValue(new Blob(['fake'], { type: 'image/jpeg' }));
+    mockedDomToBlob.mockResolvedValue(
+      new Blob(['fake'], { type: 'image/jpeg' }),
+    );
 
     const capture = createScreenshotCapture();
     await capture.capture();
@@ -41,7 +45,9 @@ describe('createScreenshotCapture', () => {
   });
 
   it('merges custom config with defaults', async () => {
-    mockedDomToBlob.mockResolvedValue(new Blob(['fake'], { type: 'image/jpeg' }));
+    mockedDomToBlob.mockResolvedValue(
+      new Blob(['fake'], { type: 'image/jpeg' }),
+    );
 
     const capture = createScreenshotCapture({ quality: 0.5, maxWidth: 800 });
     await capture.capture();
@@ -150,7 +156,9 @@ describe('createScreenshotCapture', () => {
 
   it('removes mask overlays after successful capture', async () => {
     document.body.innerHTML = '<input type="password" />';
-    mockedDomToBlob.mockResolvedValue(new Blob(['fake'], { type: 'image/jpeg' }));
+    mockedDomToBlob.mockResolvedValue(
+      new Blob(['fake'], { type: 'image/jpeg' }),
+    );
 
     const capture = createScreenshotCapture();
     await capture.capture();
@@ -202,7 +210,9 @@ describe('createScreenshotCapture', () => {
   // ─── Dimension constraints ──────────────────────────────────────
 
   it('passes maxWidth and maxHeight constraints to domToBlob', async () => {
-    mockedDomToBlob.mockResolvedValue(new Blob(['fake'], { type: 'image/jpeg' }));
+    mockedDomToBlob.mockResolvedValue(
+      new Blob(['fake'], { type: 'image/jpeg' }),
+    );
 
     const capture = createScreenshotCapture({ maxWidth: 800, maxHeight: 600 });
     await capture.capture();
@@ -219,7 +229,9 @@ describe('createScreenshotCapture', () => {
 
   it('handles invalid CSS selectors gracefully', async () => {
     document.body.innerHTML = '<div class="sensitive">secret</div>';
-    mockedDomToBlob.mockResolvedValue(new Blob(['fake'], { type: 'image/jpeg' }));
+    mockedDomToBlob.mockResolvedValue(
+      new Blob(['fake'], { type: 'image/jpeg' }),
+    );
 
     const capture = createScreenshotCapture({
       maskSelectors: ['[invalid!!!', '.sensitive'],
@@ -233,7 +245,9 @@ describe('createScreenshotCapture', () => {
   // ─── Multiple captures ─────────────────────────────────────────
 
   it('can capture multiple times', async () => {
-    mockedDomToBlob.mockResolvedValue(new Blob(['fake'], { type: 'image/jpeg' }));
+    mockedDomToBlob.mockResolvedValue(
+      new Blob(['fake'], { type: 'image/jpeg' }),
+    );
 
     const capture = createScreenshotCapture();
     const first = await capture.capture();
