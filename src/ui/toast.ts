@@ -113,7 +113,6 @@ export function createToast(config: ToastConfig): Toast {
   let shadowRoot: ShadowRoot | null = null;
   let container: HTMLDivElement | null = null;
   let autoDismissTimer: ReturnType<typeof setTimeout> | null = null;
-  let currentOnDismiss: (() => void) | null = null;
 
   function ensureHost(): { shadow: ShadowRoot; wrapper: HTMLDivElement } {
     if (host && shadowRoot) {
@@ -142,8 +141,6 @@ export function createToast(config: ToastConfig): Toast {
 
   function show(options: ToastShowOptions): void {
     const { shadow } = ensureHost();
-    currentOnDismiss = options.onDismiss;
-
     // Remove any existing toast content
     if (container) {
       container.remove();
@@ -200,7 +197,6 @@ export function createToast(config: ToastConfig): Toast {
 
   function hide(): void {
     clearAutoDismiss();
-    currentOnDismiss = null;
 
     if (container) {
       container.classList.remove('visible');
@@ -229,7 +225,6 @@ export function createToast(config: ToastConfig): Toast {
 
   function destroy(): void {
     clearAutoDismiss();
-    currentOnDismiss = null;
 
     if (container) {
       container.remove();
