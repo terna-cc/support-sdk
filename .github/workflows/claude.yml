@@ -54,6 +54,8 @@ jobs:
 
       - name: Run lint/format and auto-fix
         if: always() && steps.claude.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH=$(git branch --show-current)
           if [ "$BRANCH" = "main" ]; then
@@ -66,6 +68,7 @@ jobs:
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
+            git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
             git commit -m "style: auto-fix lint and format"
             git push -u origin HEAD
           fi
