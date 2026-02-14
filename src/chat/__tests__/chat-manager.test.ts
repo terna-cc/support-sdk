@@ -77,7 +77,15 @@ describe('createChatManager', () => {
     it('sends initial request with empty messages and diagnostic context', async () => {
       const streamChatMock = vi.mocked(chatTransport.streamChat);
       streamChatMock.mockImplementation(
-        async (_endpoint, _messages, _context, _headers, _onText, _onSummary, onDone) => {
+        async (
+          _endpoint,
+          _messages,
+          _context,
+          _headers,
+          _onText,
+          _onSummary,
+          onDone,
+        ) => {
           onDone();
         },
       );
@@ -330,7 +338,16 @@ describe('createChatManager', () => {
       let capturedSignal: AbortSignal | null = null;
 
       streamChatMock.mockImplementation(
-        async (_ep, _msgs, _ctx, _headers, _onText, _onSummary, _onDone, signal) => {
+        async (
+          _ep,
+          _msgs,
+          _ctx,
+          _headers,
+          _onText,
+          _onSummary,
+          _onDone,
+          signal,
+        ) => {
           capturedSignal = signal;
           // Simulate a long-running stream
           await new Promise<void>((_, reject) => {

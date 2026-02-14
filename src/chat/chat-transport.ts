@@ -1,8 +1,4 @@
-import type {
-  ChatMessage,
-  DiagnosticSnapshot,
-  ReportSummary,
-} from '../types';
+import type { ChatMessage, DiagnosticSnapshot, ReportSummary } from '../types';
 
 export async function streamChat(
   endpoint: string,
@@ -31,7 +27,10 @@ export async function streamChat(
   });
 
   if (!response.ok) {
-    throw new ChatTransportError(response.status, await getErrorMessage(response));
+    throw new ChatTransportError(
+      response.status,
+      await getErrorMessage(response),
+    );
   }
 
   if (!response.body) {

@@ -53,12 +53,9 @@ describe('streamChat', () => {
         capturedBody = init.body as string;
         capturedHeaders = init.headers as Headers;
         return Promise.resolve(
-          new Response(
-            createReadableStream([
-              'data: {"type":"done"}\n\n',
-            ]),
-            { status: 200 },
-          ),
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
         );
       }),
     );
@@ -74,7 +71,14 @@ describe('streamChat', () => {
     await streamChat(
       'https://api.test.com',
       [{ role: 'user', content: 'Hello' }],
-      { errors: [], failedRequests: [], consoleErrors: [], breadcrumbs: [], browser: {} as never, currentUrl: 'https://test.com' },
+      {
+        errors: [],
+        failedRequests: [],
+        consoleErrors: [],
+        breadcrumbs: [],
+        browser: {} as never,
+        currentUrl: 'https://test.com',
+      },
       authHeaders,
       onText,
       onSummary,
@@ -101,10 +105,9 @@ describe('streamChat', () => {
       vi.fn((url: string) => {
         capturedUrl = url;
         return Promise.resolve(
-          new Response(
-            createReadableStream(['data: {"type":"done"}\n\n']),
-            { status: 200 },
-          ),
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
         );
       }),
     );
@@ -221,9 +224,7 @@ describe('streamChat', () => {
   it('calls onDone if stream ends without done event', async () => {
     vi.stubGlobal(
       'fetch',
-      mockFetchWithStream([
-        'data: {"type":"text","content":"hi"}\n\n',
-      ]),
+      mockFetchWithStream(['data: {"type":"text","content":"hi"}\n\n']),
     );
 
     const onDone = vi.fn();
@@ -271,11 +272,7 @@ describe('streamChat', () => {
   it('ChatTransportError has correct status', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          new Response('', { status: 404 }),
-        ),
-      ),
+      vi.fn(() => Promise.resolve(new Response('', { status: 404 }))),
     );
 
     try {
@@ -358,10 +355,9 @@ describe('streamChat', () => {
       vi.fn((_url: string, init: RequestInit) => {
         capturedBody = init.body as string;
         return Promise.resolve(
-          new Response(
-            createReadableStream(['data: {"type":"done"}\n\n']),
-            { status: 200 },
-          ),
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
         );
       }),
     );

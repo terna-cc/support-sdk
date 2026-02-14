@@ -24,7 +24,8 @@ function makeMockChatManager(
 const mockSummary: ReportSummary = {
   category: 'bug',
   title: 'Cannot add candidates',
-  description: 'Clicking "Add Candidate" on the project page returns a 500 error.',
+  description:
+    'Clicking "Add Candidate" on the project page returns a 500 error.',
   steps_to_reproduce: ['Go to project page', 'Click Add Candidate'],
   expected_behavior: 'Candidate is created',
   actual_behavior: 'Error 500 is returned',
@@ -199,8 +200,12 @@ describe('createChatView', () => {
       chatView.setInputEnabled(false);
 
       const container = chatView.getContainer();
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
-      const sendBtn = container.querySelector('.chat-send-btn') as HTMLButtonElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
+      const sendBtn = container.querySelector(
+        '.chat-send-btn',
+      ) as HTMLButtonElement;
 
       expect(input.disabled).toBe(true);
       expect(sendBtn.disabled).toBe(true);
@@ -211,7 +216,9 @@ describe('createChatView', () => {
       chatView.setInputEnabled(true);
 
       const container = chatView.getContainer();
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
 
       expect(input.disabled).toBe(false);
     });
@@ -266,7 +273,9 @@ describe('createChatView', () => {
 
       const container = chatView.getContainer();
       const messages = container.querySelector('.chat-messages') as HTMLElement;
-      const inputArea = container.querySelector('.chat-input-area') as HTMLElement;
+      const inputArea = container.querySelector(
+        '.chat-input-area',
+      ) as HTMLElement;
       const summaryContainer = container.querySelector('.summary-container');
       const summaryActions = container.querySelector('.summary-actions');
 
@@ -343,16 +352,19 @@ describe('createChatView', () => {
 
       const container = chatView.getContainer();
       expect(
-        (container.querySelector('.chat-messages') as HTMLElement).style.display,
+        (container.querySelector('.chat-messages') as HTMLElement).style
+          .display,
       ).toBe('none');
 
       chatView.showChat();
 
       expect(
-        (container.querySelector('.chat-messages') as HTMLElement).style.display,
+        (container.querySelector('.chat-messages') as HTMLElement).style
+          .display,
       ).toBe('flex');
       expect(
-        (container.querySelector('.chat-input-area') as HTMLElement).style.display,
+        (container.querySelector('.chat-input-area') as HTMLElement).style
+          .display,
       ).toBe('flex');
       expect(container.querySelector('.summary-container')).toBeNull();
     });
@@ -363,8 +375,12 @@ describe('createChatView', () => {
       const container = chatView.getContainer();
       document.body.appendChild(container);
 
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
-      const sendBtn = container.querySelector('.chat-send-btn') as HTMLButtonElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
+      const sendBtn = container.querySelector(
+        '.chat-send-btn',
+      ) as HTMLButtonElement;
 
       input.value = 'Test message';
       input.dispatchEvent(new Event('input'));
@@ -380,7 +396,9 @@ describe('createChatView', () => {
       const container = chatView.getContainer();
       document.body.appendChild(container);
 
-      const sendBtn = container.querySelector('.chat-send-btn') as HTMLButtonElement;
+      const sendBtn = container.querySelector(
+        '.chat-send-btn',
+      ) as HTMLButtonElement;
       sendBtn.click();
 
       expect(mockManager.sendMessage).not.toHaveBeenCalled();
@@ -392,7 +410,9 @@ describe('createChatView', () => {
       const container = chatView.getContainer();
       document.body.appendChild(container);
 
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
       input.value = 'Enter message';
       input.dispatchEvent(new Event('input'));
 
@@ -408,7 +428,9 @@ describe('createChatView', () => {
       const container = chatView.getContainer();
       document.body.appendChild(container);
 
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
       input.value = 'Multiline';
       input.dispatchEvent(new Event('input'));
 

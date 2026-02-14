@@ -242,10 +242,7 @@ export class SupportSDK {
         // ignore
       }
     } catch (err) {
-      if (
-        err instanceof ChatTransportError &&
-        err.status === 404
-      ) {
+      if (err instanceof ChatTransportError && err.status === 404) {
         this.modal?.setChatEnabled(false);
         return;
       }
