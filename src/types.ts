@@ -29,12 +29,18 @@ export interface AttachmentConfig {
   allowedTypes?: string[];
 }
 
+export interface PerformanceCaptureConfig {
+  longTaskThreshold?: number;
+  maxLongTasks?: number;
+}
+
 export interface CaptureConfig {
   console?: false | (BufferConfig & { levels?: ConsoleLevel[] });
   network?: false | (BufferConfig & { urlFilter?: (url: string) => boolean });
   breadcrumbs?: false | BufferConfig;
   screenshot?: boolean;
   attachments?: AttachmentConfig;
+  performance?: boolean | PerformanceCaptureConfig;
 }
 
 export interface BufferConfig {
@@ -144,6 +150,30 @@ export interface AttachmentMetadata {
   type: string;
 }
 
+// ─── Performance Metrics ─────────────────────────────────────────────
+
+export interface PerformanceMetrics {
+  lcp: number | null;
+  fid: number | null;
+  cls: number | null;
+  inp: number | null;
+  ttfb: number | null;
+  longTasks: LongTaskEntry[];
+  memory: MemoryInfo | null;
+}
+
+export interface LongTaskEntry {
+  duration: number;
+  startTime: number;
+  timestamp: number;
+}
+
+export interface MemoryInfo {
+  jsHeapSizeLimit: number;
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+}
+
 // ─── Diagnostic Report (the full payload) ────────────────────────────
 
 export interface DiagnosticReport {
@@ -155,6 +185,7 @@ export interface DiagnosticReport {
   browser: BrowserInfo;
   screenshot: string | null;
   errors: ErrorInfo[];
+  performance: PerformanceMetrics | null;
   attachments?: AttachmentMetadata[];
   user: UserContext | null;
   metadata: Record<string, unknown>;
@@ -182,6 +213,7 @@ export interface DiagnosticSnapshot {
   breadcrumbs: Breadcrumb[];
   browser: BrowserInfo;
   currentUrl: string;
+  performance: PerformanceMetrics | null;
 }
 
 export interface ReportSummary {
