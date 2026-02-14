@@ -49,10 +49,7 @@ export function createTriggerButton(config: TriggerConfig): TriggerButton {
       const icon = document.createElement('span');
       icon.className = 'trigger-icon';
       icon.setAttribute('aria-hidden', 'true');
-      const svg = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'svg',
-      );
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 16 16');
       svg.setAttribute('fill', 'currentColor');
       svg.setAttribute('width', '16');

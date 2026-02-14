@@ -9,8 +9,8 @@ describe('buildThemeVars', () => {
     expect(css).toContain('--support-primary-text: #ffffff');
     expect(css).toContain('--support-primary-hover: #1d4ed8');
     expect(css).toContain('--support-bg: #ffffff');
-    expect(css).toContain("--support-text: #1e293b");
-    expect(css).toContain("--support-text-secondary: #64748b");
+    expect(css).toContain('--support-text: #1e293b');
+    expect(css).toContain('--support-text-secondary: #64748b');
     expect(css).toContain('--support-assistant-bubble: #f3f4f6');
     expect(css).toContain('--support-border: #e2e8f0');
     expect(css).toContain('--support-radius: 8px');

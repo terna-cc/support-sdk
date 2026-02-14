@@ -160,33 +160,38 @@ export class SupportSDK {
     });
 
     // 4. Create review modal
-    this.modal = createReviewModal(uiConfig, this.translations, {
-      onSubmit: async ({ report, screenshot, attachments }) => {
-        // Enrich report with SDK-level context
-        report.user = this.userContext;
-        report.metadata = { ...this.metadata, ...report.metadata };
-        report.sdk_version = SDK_VERSION;
-        report.captured_at = new Date().toISOString();
+    this.modal = createReviewModal(
+      uiConfig,
+      this.translations,
+      {
+        onSubmit: async ({ report, screenshot, attachments }) => {
+          // Enrich report with SDK-level context
+          report.user = this.userContext;
+          report.metadata = { ...this.metadata, ...report.metadata };
+          report.sdk_version = SDK_VERSION;
+          report.captured_at = new Date().toISOString();
 
-        const result = await this.transport!.sendReport(
-          report,
-          screenshot,
-          attachments,
-        );
-        if (!result.success) {
-          throw new Error(result.error?.message ?? 'Failed to send report');
-        }
+          const result = await this.transport!.sendReport(
+            report,
+            screenshot,
+            attachments,
+          );
+          if (!result.success) {
+            throw new Error(result.error?.message ?? 'Failed to send report');
+          }
+        },
+        onCancel: () => {
+          this.frozenErrorInfo = null;
+        },
+        onOpen: () => {
+          this.trigger?.hide();
+        },
+        onClose: () => {
+          this.trigger?.show();
+        },
       },
-      onCancel: () => {
-        this.frozenErrorInfo = null;
-      },
-      onOpen: () => {
-        this.trigger?.hide();
-      },
-      onClose: () => {
-        this.trigger?.show();
-      },
-    }, themeConfig);
+      themeConfig,
+    );
 
     // 4a. Create attachment manager if attachments are enabled
     const attachmentConfig =

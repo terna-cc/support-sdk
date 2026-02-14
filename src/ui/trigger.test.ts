@@ -174,9 +174,7 @@ describe('createTriggerButton', () => {
     expect(img!.alt).toBe('Support');
 
     // Default SVG icon should not be present
-    const svgInSpan = host!.shadowRoot!.querySelector(
-      '.trigger-icon svg',
-    );
+    const svgInSpan = host!.shadowRoot!.querySelector('.trigger-icon svg');
     expect(svgInSpan).toBeNull();
   });
 
