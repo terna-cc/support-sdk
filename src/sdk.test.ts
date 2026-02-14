@@ -6,7 +6,9 @@ import type { SupportSDKConfig } from './types';
 
 // Mock modern-screenshot to avoid DOM rendering issues in jsdom
 vi.mock('modern-screenshot', () => ({
-  domToBlob: vi.fn(() => Promise.resolve(new Blob(['fake'], { type: 'image/jpeg' }))),
+  domToBlob: vi.fn(() =>
+    Promise.resolve(new Blob(['fake'], { type: 'image/jpeg' })),
+  ),
 }));
 
 // Mock URL.createObjectURL for screenshot preview in modal

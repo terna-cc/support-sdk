@@ -1,10 +1,7 @@
 import type { SupportSDKConfig, UserContext, ErrorInfo } from './types';
 import { Sanitizer } from './core/sanitizer';
 import { createConsoleCapture, type ConsoleCapture } from './capture/console';
-import {
-  createNetworkCapture,
-  type NetworkCapture,
-} from './capture/network';
+import { createNetworkCapture, type NetworkCapture } from './capture/network';
 import { collectBrowserInfo } from './capture/browser';
 import {
   createScreenshotCapture,
