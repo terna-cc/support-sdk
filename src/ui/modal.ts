@@ -393,39 +393,43 @@ export function createReviewModal(
     });
 
     // ── Chat View ──
-    chatView = createChatView(manager, {
-      onSubmit: async ({ description, conversation, aiSummary }) => {
-        if (!currentData) return;
+    chatView = createChatView(
+      manager,
+      {
+        onSubmit: async ({ description, conversation, aiSummary }) => {
+          if (!currentData) return;
 
-        const report = buildReport(currentData, description);
-        // Enrich with conversation and summary
-        report.metadata = {
-          ...report.metadata,
-          conversation: conversation as unknown as Record<string, unknown>[],
-          ai_summary: aiSummary as unknown as Record<string, unknown>,
-        };
+          const report = buildReport(currentData, description);
+          // Enrich with conversation and summary
+          report.metadata = {
+            ...report.metadata,
+            conversation: conversation as unknown as Record<string, unknown>[],
+            ai_summary: aiSummary as unknown as Record<string, unknown>,
+          };
 
-        const screenshot =
-          checkedState.get('screenshot') && currentData.screenshot
-            ? currentData.screenshot
-            : undefined;
+          const screenshot =
+            checkedState.get('screenshot') && currentData.screenshot
+              ? currentData.screenshot
+              : undefined;
 
-        await callbacks.onSubmit({ report, screenshot });
+          await callbacks.onSubmit({ report, screenshot });
 
-        // Close after brief delay on success
-        setTimeout(() => closeFn(), 1500);
+          // Close after brief delay on success
+          setTimeout(() => closeFn(), 1500);
+        },
+        onCancel: () => {
+          closeFn();
+          cancelFn();
+        },
+        onKeepChatting: () => {
+          if (chatView) {
+            chatView.showChat();
+            manager.sendMessage("I'd like to adjust the summary");
+          }
+        },
       },
-      onCancel: () => {
-        closeFn();
-        cancelFn();
-      },
-      onKeepChatting: () => {
-        if (chatView) {
-          chatView.showChat();
-          manager.sendMessage("I'd like to adjust the summary");
-        }
-      },
-    }, translations);
+      translations,
+    );
 
     content.appendChild(chatView.getContainer());
 

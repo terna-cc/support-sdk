@@ -66,7 +66,9 @@ export class SupportSDK {
   private constructor(config: SupportSDKConfig) {
     this.config = config;
     this.userContext = config.user ?? null;
-    this.locale = config.locale ?? (typeof navigator !== 'undefined' ? navigator.language : 'en');
+    this.locale =
+      config.locale ??
+      (typeof navigator !== 'undefined' ? navigator.language : 'en');
     this.translations = getTranslations(this.locale);
   }
 

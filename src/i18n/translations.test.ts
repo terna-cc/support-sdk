@@ -25,7 +25,9 @@ describe('translations', () => {
     expect(translations['es'].keepChatting).toBe('Seguir conversando');
     expect(translations['es'].categoryBug).toBe('Reporte de error');
     expect(translations['es'].categoryFeedback).toBe('Comentario');
-    expect(translations['es'].categoryFeature).toBe('Solicitud de funcionalidad');
+    expect(translations['es'].categoryFeature).toBe(
+      'Solicitud de funcionalidad',
+    );
   });
 });
 

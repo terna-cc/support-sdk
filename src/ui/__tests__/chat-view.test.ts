@@ -47,11 +47,15 @@ describe('createChatView', () => {
     onCancel = vi.fn();
     onKeepChatting = vi.fn();
 
-    chatView = createChatView(mockManager, {
-      onSubmit,
-      onCancel,
-      onKeepChatting,
-    }, getTranslations('en'));
+    chatView = createChatView(
+      mockManager,
+      {
+        onSubmit,
+        onCancel,
+        onKeepChatting,
+      },
+      getTranslations('en'),
+    );
   });
 
   afterEach(() => {
@@ -518,30 +522,42 @@ describe('createChatView', () => {
   describe('i18n / translations', () => {
     it('uses translation for input placeholder', () => {
       const container = chatView.getContainer();
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
       expect(input.placeholder).toBe('Type your message...');
     });
 
     it('uses Spanish translations when configured', () => {
-      const esView = createChatView(mockManager, {
-        onSubmit,
-        onCancel,
-        onKeepChatting,
-      }, getTranslations('es'));
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
 
       const container = esView.getContainer();
-      const input = container.querySelector('.chat-input') as HTMLTextAreaElement;
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
       expect(input.placeholder).toBe('Escribe tu mensaje...');
 
       esView.destroy();
     });
 
     it('uses translated category labels in summary', () => {
-      const esView = createChatView(mockManager, {
-        onSubmit,
-        onCancel,
-        onKeepChatting,
-      }, getTranslations('es'));
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
 
       esView.showSummary(mockSummary);
 
@@ -553,11 +569,15 @@ describe('createChatView', () => {
     });
 
     it('uses translated section labels in summary', () => {
-      const esView = createChatView(mockManager, {
-        onSubmit,
-        onCancel,
-        onKeepChatting,
-      }, getTranslations('es'));
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
 
       esView.showSummary(mockSummary);
 
@@ -572,11 +592,15 @@ describe('createChatView', () => {
     });
 
     it('uses translated Keep chatting and Submit buttons', () => {
-      const esView = createChatView(mockManager, {
-        onSubmit,
-        onCancel,
-        onKeepChatting,
-      }, getTranslations('es'));
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
 
       esView.showSummary(mockSummary);
 

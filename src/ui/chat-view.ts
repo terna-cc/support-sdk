@@ -413,7 +413,9 @@ export function createChatView(
       submitBtn.textContent = '';
       const spinner = el('span', 'spinner');
       submitBtn.appendChild(spinner);
-      submitBtn.appendChild(document.createTextNode(` ${translations.submitting}`));
+      submitBtn.appendChild(
+        document.createTextNode(` ${translations.submitting}`),
+      );
 
       try {
         await callbacks.onSubmit({
