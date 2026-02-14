@@ -14,7 +14,10 @@ const DEFAULT_MAX_BODY_SIZE = 10_000;
 
 function isTextContentType(contentType: string | null | undefined): boolean {
   if (!contentType) return false;
-  return contentType.includes('application/json') || contentType.includes('text/plain');
+  return (
+    contentType.includes('application/json') ||
+    contentType.includes('text/plain')
+  );
 }
 
 function headersToRecord(headers: Headers): Record<string, string> {
@@ -51,7 +54,9 @@ export function createNetworkCapture(
   let originalFetch: typeof globalThis.fetch | null = null;
   let originalXHROpen: typeof XMLHttpRequest.prototype.open | null = null;
   let originalXHRSend: typeof XMLHttpRequest.prototype.send | null = null;
-  let originalXHRSetRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader | null = null;
+  let originalXHRSetRequestHeader:
+    | typeof XMLHttpRequest.prototype.setRequestHeader
+    | null = null;
 
   // URL to exclude (the SDK's own endpoint)
   let excludedEndpoint: string | null = null;
@@ -106,7 +111,8 @@ export function createNetworkCapture(
 
       // Extract request body
       let requestBody: string | null = null;
-      const reqContentType = reqHeaders['content-type'] ?? reqHeaders['Content-Type'] ?? '';
+      const reqContentType =
+        reqHeaders['content-type'] ?? reqHeaders['Content-Type'] ?? '';
       if (isTextContentType(reqContentType)) {
         requestBody = extractBodyString(init?.body, maxBodySize);
         if (requestBody) {
@@ -228,7 +234,9 @@ export function createNetworkCapture(
       return originalXHRSetRequestHeader!.call(this, name, value);
     };
 
-    XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyInit | null) {
+    XMLHttpRequest.prototype.send = function (
+      body?: Document | XMLHttpRequestBodyInit | null,
+    ) {
       const meta = xhrMeta.get(this);
       if (!meta || shouldExclude(meta.url)) {
         return originalXHRSend!.call(this, body);
@@ -237,7 +245,8 @@ export function createNetworkCapture(
       meta.startTime = performance.now();
 
       // Capture request body
-      const reqContentType = meta.headers['content-type'] ?? meta.headers['Content-Type'] ?? '';
+      const reqContentType =
+        meta.headers['content-type'] ?? meta.headers['Content-Type'] ?? '';
       if (isTextContentType(reqContentType) && typeof body === 'string') {
         if (body.length > maxBodySize) {
           meta.body = `[truncated, ${body.length} bytes total]`;
@@ -265,9 +274,14 @@ export function createNetworkCapture(
 
         // Response body
         let responseBody: string | null = null;
-        const resContentType = resHeaders['content-type'] ?? resHeaders['Content-Type'] ?? '';
+        const resContentType =
+          resHeaders['content-type'] ?? resHeaders['Content-Type'] ?? '';
         if (isTextContentType(resContentType)) {
-          if (typeof this.response === 'string' || this.responseType === '' || this.responseType === 'text') {
+          if (
+            typeof this.response === 'string' ||
+            this.responseType === '' ||
+            this.responseType === 'text'
+          ) {
             const text = this.responseText;
             if (text.length > maxBodySize) {
               responseBody = `[truncated, ${text.length} bytes total]`;
@@ -276,7 +290,8 @@ export function createNetworkCapture(
             }
           }
         } else if (resContentType) {
-          const contentLength = resHeaders['content-length'] ?? resHeaders['Content-Length'];
+          const contentLength =
+            resHeaders['content-length'] ?? resHeaders['Content-Length'];
           if (contentLength) {
             responseBody = `[binary, ${contentLength} bytes]`;
           } else {

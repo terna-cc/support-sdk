@@ -37,8 +37,7 @@ const BUILTIN_PATTERNS: { pattern: RegExp; replacement: string }[] = [
     replacement: '[REDACTED:email]',
   },
   {
-    pattern:
-      /(\+?\d{1,4}[\s.-]?)?(\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{4}/g,
+    pattern: /(\+?\d{1,4}[\s.-]?)?(\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{4}/g,
     replacement: '[REDACTED:phone]',
   },
 ];
@@ -86,9 +85,7 @@ export class Sanitizer {
     return result;
   }
 
-  sanitizeHeaders(
-    headers: Record<string, string>,
-  ): Record<string, string> {
+  sanitizeHeaders(headers: Record<string, string>): Record<string, string> {
     const result: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(headers)) {
@@ -143,7 +140,9 @@ export class Sanitizer {
 
     if (typeof obj === 'object') {
       const result: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      for (const [key, value] of Object.entries(
+        obj as Record<string, unknown>,
+      )) {
         result[key] = this.sanitizeObject(value);
       }
       return result as T;

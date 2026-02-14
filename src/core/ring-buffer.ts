@@ -25,10 +25,7 @@ export class RingBuffer<T> {
     if (this.count === 0) return [];
 
     const result: T[] = [];
-    const start =
-      this.count < this.cap
-        ? 0
-        : this.head; // head points to oldest when full
+    const start = this.count < this.cap ? 0 : this.head; // head points to oldest when full
 
     for (let i = 0; i < this.count; i++) {
       const index = (start + i) % this.cap;

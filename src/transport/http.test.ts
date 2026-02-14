@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTransport } from './http';
 import type { DiagnosticReport } from '../types';
 
-function makeReport(overrides: Partial<DiagnosticReport> = {}): DiagnosticReport {
+function makeReport(
+  overrides: Partial<DiagnosticReport> = {},
+): DiagnosticReport {
   return {
     description: 'Test report',
     console: [],
@@ -340,10 +342,9 @@ describe('createTransport', () => {
         'fetch',
         vi.fn(() =>
           Promise.resolve(
-            new Response(
-              JSON.stringify({ id: 'report-uuid-123' }),
-              { status: 201 },
-            ),
+            new Response(JSON.stringify({ id: 'report-uuid-123' }), {
+              status: 201,
+            }),
           ),
         ),
       );
@@ -449,9 +450,7 @@ describe('createTransport', () => {
         'fetch',
         vi.fn(() => {
           callCount++;
-          return Promise.resolve(
-            new Response('Server Error', { status: 502 }),
-          );
+          return Promise.resolve(new Response('Server Error', { status: 502 }));
         }),
       );
 
@@ -517,9 +516,7 @@ describe('createTransport', () => {
       it(`maps ${status} to "${message}"`, async () => {
         vi.stubGlobal(
           'fetch',
-          vi.fn(() =>
-            Promise.resolve(new Response('Error', { status })),
-          ),
+          vi.fn(() => Promise.resolve(new Response('Error', { status }))),
         );
 
         const transport = createTransport({

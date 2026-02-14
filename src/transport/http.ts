@@ -146,10 +146,7 @@ export function createTransport(config: TransportConfig): Transport {
           clearTimeout(timeoutId);
 
           if (attempt === maxRetries) {
-            if (
-              err instanceof DOMException &&
-              err.name === 'AbortError'
-            ) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
               return {
                 success: false,
                 error: { status: 0, message: 'Could not connect to server' },

@@ -5,9 +5,18 @@ describe('collectBrowserInfo', () => {
   beforeEach(() => {
     // jsdom provides basic navigator/window/screen globals
     // We mock specific values for deterministic tests
-    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true });
-    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true });
-    Object.defineProperty(window, 'devicePixelRatio', { value: 2, writable: true });
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1024,
+      writable: true,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      value: 768,
+      writable: true,
+    });
+    Object.defineProperty(window, 'devicePixelRatio', {
+      value: 2,
+      writable: true,
+    });
   });
 
   it('returns all required fields', () => {
@@ -151,7 +160,9 @@ describe('collectBrowserInfo', () => {
     });
 
     it('returns Unknown for unrecognized UA strings', () => {
-      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('SomeWeirdBot/1.0');
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'SomeWeirdBot/1.0',
+      );
 
       const info = collectBrowserInfo();
       expect(info.browser).toBe('Unknown');
@@ -186,8 +197,14 @@ describe('collectBrowserInfo', () => {
   });
 
   it('reads viewport dimensions from window', () => {
-    Object.defineProperty(window, 'innerWidth', { value: 1440, writable: true });
-    Object.defineProperty(window, 'innerHeight', { value: 900, writable: true });
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1440,
+      writable: true,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      value: 900,
+      writable: true,
+    });
 
     const info = collectBrowserInfo();
     expect(info.viewportWidth).toBe(1440);
