@@ -129,7 +129,7 @@ describe('createReviewModal', () => {
 
     const style = getShadow()!.querySelector('style');
     expect(style).not.toBeNull();
-    expect(style!.textContent).toContain('.modal-backdrop');
+    expect(style!.textContent).toContain('.modal-content');
   });
 
   it('displays modal title', () => {
@@ -356,10 +356,10 @@ describe('createReviewModal', () => {
     const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
-    const backdrop = getShadow()!.querySelector(
-      '.modal-backdrop',
+    const content = getShadow()!.querySelector(
+      '.modal-content',
     ) as HTMLElement;
-    backdrop.dispatchEvent(
+    content.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
     );
 
@@ -519,16 +519,14 @@ describe('createReviewModal', () => {
     expect(getHost()).toBeNull();
   });
 
-  it('locks body scroll when open and restores on close', () => {
+  it('does not lock body scroll (page stays interactive)', () => {
     document.body.style.overflow = '';
     const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
-    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body.style.overflow).toBe('');
 
     modal.close();
-
-    expect(document.body.style.overflow).toBe('');
   });
 
   it('renders textarea for description', () => {
@@ -599,7 +597,7 @@ describe('createReviewModal', () => {
     });
   });
 
-  it('sets role=dialog and aria-modal on backdrop', () => {
+  it('sets role=dialog on backdrop container', () => {
     const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
@@ -607,7 +605,7 @@ describe('createReviewModal', () => {
       '.modal-backdrop',
     ) as HTMLElement;
     expect(backdrop.getAttribute('role')).toBe('dialog');
-    expect(backdrop.getAttribute('aria-modal')).toBe('true');
+    expect(backdrop.getAttribute('aria-modal')).toBe('false');
   });
 
   it('does not show screenshot section when no screenshot provided', () => {
@@ -640,5 +638,68 @@ describe('createReviewModal', () => {
 
     const checkboxes = getShadow()!.querySelectorAll('.category-checkbox');
     expect(checkboxes.length).toBe(1); // Only console
+  });
+
+  it('renders as a panel with position class based on triggerPosition', () => {
+    config.triggerPosition = 'bottom-left';
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
+    modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+    const content = getShadow()!.querySelector('.modal-content') as HTMLElement;
+    expect(content.classList.contains('bottom-left')).toBe(true);
+  });
+
+  it('defaults to bottom-right position when triggerPosition is not set', () => {
+    config.triggerPosition = undefined;
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
+    modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+    const content = getShadow()!.querySelector('.modal-content') as HTMLElement;
+    expect(content.classList.contains('bottom-right')).toBe(true);
+  });
+
+  it('has no dark backdrop overlay', () => {
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
+    modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+    const style = getShadow()!.querySelector('style');
+    // Should not contain background overlay styles
+    expect(style!.textContent).not.toContain('rgba(0, 0, 0, 0.5)');
+  });
+
+  it('calls onOpen callback when panel opens', () => {
+    const onOpenSpy = vi.fn();
+    const modal = createReviewModal(config, getTranslations('en'), {
+      ...callbacks,
+      onOpen: onOpenSpy,
+    });
+    modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+    expect(onOpenSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onClose callback when panel closes', () => {
+    const onCloseSpy = vi.fn();
+    const modal = createReviewModal(config, getTranslations('en'), {
+      ...callbacks,
+      onClose: onCloseSpy,
+    });
+    modal.open({ consoleLogs: makeConsoleLogs(1) });
+    modal.close();
+
+    expect(onCloseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('supports all position variants', () => {
+    for (const position of ['bottom-right', 'bottom-left', 'top-right', 'top-left'] as const) {
+      config.triggerPosition = position;
+      const modal = createReviewModal(config, getTranslations('en'), callbacks);
+      modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+      const content = getShadow()!.querySelector('.modal-content') as HTMLElement;
+      expect(content.classList.contains(position)).toBe(true);
+
+      modal.close();
+    }
   });
 });
