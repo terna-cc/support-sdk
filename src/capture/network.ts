@@ -220,7 +220,7 @@ export function createNetworkCapture(
         startTime: 0,
         body: null,
       });
-      return (originalXHROpen as Function).call(this, method, url, ...rest);
+      return (originalXHROpen as (...args: unknown[]) => void).call(this, method, url, ...rest);
     };
 
     XMLHttpRequest.prototype.setRequestHeader = function (
