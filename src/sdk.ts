@@ -170,6 +170,12 @@ export class SupportSDK {
       onCancel: () => {
         this.frozenErrorInfo = null;
       },
+      onOpen: () => {
+        this.trigger?.hide();
+      },
+      onClose: () => {
+        this.trigger?.show();
+      },
     });
 
     // 4b. Create chat manager if chat is enabled

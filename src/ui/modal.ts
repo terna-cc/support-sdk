@@ -30,6 +30,8 @@ export interface ModalCallbacks {
     screenshot?: Blob;
   }) => Promise<void>;
   onCancel: () => void;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
 export interface ReviewModal {
@@ -181,16 +183,6 @@ function trapFocus(root: HTMLElement): () => void {
   return () => root.removeEventListener('keydown', handleKeydown);
 }
 
-// ─── Body scroll lock ──────────────────────────────────────────────
-
-function lockBodyScroll(): () => void {
-  const original = document.body.style.overflow;
-  document.body.style.overflow = 'hidden';
-  return () => {
-    document.body.style.overflow = original;
-  };
-}
-
 // ─── Main factory ──────────────────────────────────────────────────
 
 export function createReviewModal(
@@ -200,7 +192,6 @@ export function createReviewModal(
 ): ReviewModal {
   let host: HTMLDivElement | null = null;
   let shadow: ShadowRoot | null = null;
-  let unlockScroll: (() => void) | null = null;
   let removeTrap: (() => void) | null = null;
   let currentData: ModalData | null = null;
 
@@ -484,10 +475,13 @@ export function createReviewModal(
     style.textContent = modalStyles;
     shadow.appendChild(style);
 
-    // Backdrop
+    // Position class based on triggerPosition config
+    const position = config.triggerPosition ?? 'bottom-right';
+
+    // Container (no backdrop overlay — page stays interactive)
     const backdrop = el('div', 'modal-backdrop');
     backdrop.setAttribute('role', 'dialog');
-    backdrop.setAttribute('aria-modal', 'true');
+    backdrop.setAttribute('aria-modal', 'false');
     backdrop.setAttribute(
       'aria-label',
       config.modalTitle ?? translations.modalTitle,
@@ -504,6 +498,9 @@ export function createReviewModal(
         () => callbacks.onCancel(),
       );
 
+      // Apply position class to content
+      content.classList.add(position);
+
       // Escape key handler
       const handleEscape = (e: KeyboardEvent): void => {
         if (e.key === 'Escape') {
@@ -512,21 +509,13 @@ export function createReviewModal(
         }
       };
 
-      // Click outside
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) {
-          close();
-          callbacks.onCancel();
-        }
-      });
-
       backdrop.appendChild(content);
       shadow.appendChild(backdrop);
 
       document.body.appendChild(host);
-      unlockScroll = lockBodyScroll();
-      removeTrap = trapFocus(backdrop);
-      backdrop.addEventListener('keydown', handleEscape);
+      removeTrap = trapFocus(content);
+      content.addEventListener('keydown', handleEscape);
+      callbacks.onOpen?.();
 
       onMount();
       return;
@@ -535,7 +524,7 @@ export function createReviewModal(
     // ── Classic textarea mode ──
 
     // Content container
-    const content = el('div', 'modal-content');
+    const content = el('div', `modal-content ${position}`);
 
     // ── Header ──
     const header = el('div', 'modal-header');
@@ -772,24 +761,16 @@ export function createReviewModal(
       }
     };
 
-    // Click outside (on backdrop, not content)
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) {
-        close();
-        callbacks.onCancel();
-      }
-    });
-
     backdrop.appendChild(content);
     shadow.appendChild(backdrop);
 
-    // Mount and lock
+    // Mount (no body scroll lock — page stays interactive)
     document.body.appendChild(host);
-    unlockScroll = lockBodyScroll();
-    removeTrap = trapFocus(backdrop);
+    removeTrap = trapFocus(content);
 
-    // Listen for Escape on the host element (inside shadow DOM)
-    backdrop.addEventListener('keydown', handleEscape);
+    // Listen for Escape on the content element (inside shadow DOM)
+    content.addEventListener('keydown', handleEscape);
+    callbacks.onOpen?.();
 
     // Focus the close button initially
     closeBtn.focus();
@@ -807,10 +788,6 @@ export function createReviewModal(
       removeTrap();
       removeTrap = null;
     }
-    if (unlockScroll) {
-      unlockScroll();
-      unlockScroll = null;
-    }
     if (host) {
       host.remove();
       host = null;
@@ -818,6 +795,7 @@ export function createReviewModal(
     }
     currentData = null;
     checkedState.clear();
+    callbacks.onClose?.();
   }
 
   function destroy(): void {

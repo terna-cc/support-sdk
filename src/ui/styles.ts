@@ -40,50 +40,66 @@ const baseReset = `
   }
 `;
 
-// ─── Modal styles ──────────────────────────────────────────────────
+// ─── Modal / Panel styles ───────────────────────────────────────────
 
 export const modalStyles = `
   ${baseReset}
 
   .modal-backdrop {
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
     z-index: 2147483647;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    animation: backdrop-fade-in 0.15s ease-out;
   }
 
-  @keyframes backdrop-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes modal-scale-in {
+  @keyframes panel-slide-in {
     from {
       opacity: 0;
-      transform: scale(0.96);
+      transform: translateY(12px);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
   }
 
   .modal-content {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
     background: var(--support-bg);
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-    width: 100%;
-    max-width: 520px;
-    max-height: calc(100vh - 32px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    width: 380px;
+    max-height: 520px;
     display: flex;
     flex-direction: column;
-    animation: modal-scale-in 0.15s ease-out;
+    animation: panel-slide-in 0.2s ease-out;
     overflow: hidden;
+    z-index: 2147483647;
+  }
+
+  /* Position variants */
+  .modal-content.bottom-right {
+    bottom: 80px;
+    right: 16px;
+  }
+
+  .modal-content.bottom-left {
+    bottom: 80px;
+    left: 16px;
+    right: auto;
+  }
+
+  .modal-content.top-right {
+    top: 80px;
+    bottom: auto;
+    right: 16px;
+  }
+
+  .modal-content.top-left {
+    top: 80px;
+    bottom: auto;
+    left: 16px;
+    right: auto;
   }
 
   .modal-header {
@@ -479,13 +495,27 @@ export const modalStyles = `
 
   @media (max-width: 480px) {
     .modal-content {
-      max-width: 100%;
-      max-height: 100vh;
-      border-radius: 0;
+      left: 8px;
+      right: 8px;
+      bottom: 72px;
+      width: auto;
+      max-height: 60vh;
     }
 
-    .modal-backdrop {
-      padding: 0;
+    .modal-content.bottom-left,
+    .modal-content.bottom-right {
+      left: 8px;
+      right: 8px;
+      bottom: 72px;
+      top: auto;
+    }
+
+    .modal-content.top-left,
+    .modal-content.top-right {
+      left: 8px;
+      right: 8px;
+      top: 72px;
+      bottom: auto;
     }
 
     .modal-body {
