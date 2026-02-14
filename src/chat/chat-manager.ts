@@ -26,6 +26,7 @@ export function createChatManager(config: {
   endpoint: string;
   auth: AuthConfig;
   maxMessages: number;
+  locale?: string;
 }): ChatManager {
   const maxMessages = config.maxMessages ?? DEFAULT_MAX_MESSAGES;
 
@@ -100,6 +101,7 @@ export function createChatManager(config: {
           doneCallback?.();
         },
         abortController.signal,
+        config.locale,
       );
     } catch (err) {
       streaming = false;

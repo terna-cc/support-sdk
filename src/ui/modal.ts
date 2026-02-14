@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import type { ChatManager } from '../chat/chat-manager';
 import { createChatView, type ChatView } from './chat-view';
+import type { Translations } from '../i18n/translations';
 
 // ─── Public interfaces ─────────────────────────────────────────────
 
@@ -194,6 +195,7 @@ function lockBodyScroll(): () => void {
 
 export function createReviewModal(
   config: UIConfig,
+  translations: Translations,
   callbacks: ModalCallbacks,
 ): ReviewModal {
   let host: HTMLDivElement | null = null;
@@ -359,7 +361,7 @@ export function createReviewModal(
     // ── Header ──
     const header = el('div', 'modal-header');
     const title = el('span', 'modal-title');
-    title.textContent = config.modalTitle ?? 'Report Issue';
+    title.textContent = config.modalTitle ?? translations.modalTitle;
     const closeBtn = el('button', 'modal-close');
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', 'Close');
@@ -391,39 +393,43 @@ export function createReviewModal(
     });
 
     // ── Chat View ──
-    chatView = createChatView(manager, {
-      onSubmit: async ({ description, conversation, aiSummary }) => {
-        if (!currentData) return;
+    chatView = createChatView(
+      manager,
+      {
+        onSubmit: async ({ description, conversation, aiSummary }) => {
+          if (!currentData) return;
 
-        const report = buildReport(currentData, description);
-        // Enrich with conversation and summary
-        report.metadata = {
-          ...report.metadata,
-          conversation: conversation as unknown as Record<string, unknown>[],
-          ai_summary: aiSummary as unknown as Record<string, unknown>,
-        };
+          const report = buildReport(currentData, description);
+          // Enrich with conversation and summary
+          report.metadata = {
+            ...report.metadata,
+            conversation: conversation as unknown as Record<string, unknown>[],
+            ai_summary: aiSummary as unknown as Record<string, unknown>,
+          };
 
-        const screenshot =
-          checkedState.get('screenshot') && currentData.screenshot
-            ? currentData.screenshot
-            : undefined;
+          const screenshot =
+            checkedState.get('screenshot') && currentData.screenshot
+              ? currentData.screenshot
+              : undefined;
 
-        await callbacks.onSubmit({ report, screenshot });
+          await callbacks.onSubmit({ report, screenshot });
 
-        // Close after brief delay on success
-        setTimeout(() => closeFn(), 1500);
+          // Close after brief delay on success
+          setTimeout(() => closeFn(), 1500);
+        },
+        onCancel: () => {
+          closeFn();
+          cancelFn();
+        },
+        onKeepChatting: () => {
+          if (chatView) {
+            chatView.showChat();
+            manager.sendMessage("I'd like to adjust the summary");
+          }
+        },
       },
-      onCancel: () => {
-        closeFn();
-        cancelFn();
-      },
-      onKeepChatting: () => {
-        if (chatView) {
-          chatView.showChat();
-          manager.sendMessage("I'd like to adjust the summary");
-        }
-      },
-    });
+      translations,
+    );
 
     content.appendChild(chatView.getContainer());
 
@@ -484,7 +490,7 @@ export function createReviewModal(
     backdrop.setAttribute('aria-modal', 'true');
     backdrop.setAttribute(
       'aria-label',
-      config.modalTitle ?? 'Send Diagnostic Report',
+      config.modalTitle ?? translations.modalTitle,
     );
 
     // Determine mode: chat or classic textarea
@@ -534,7 +540,7 @@ export function createReviewModal(
     // ── Header ──
     const header = el('div', 'modal-header');
     const title = el('span', 'modal-title');
-    title.textContent = config.modalTitle ?? 'Send Diagnostic Report';
+    title.textContent = config.modalTitle ?? translations.modalTitle;
     const closeBtn = el('button', 'modal-close');
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', 'Close');

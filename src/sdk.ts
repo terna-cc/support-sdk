@@ -23,6 +23,7 @@ import {
   type ChatManager,
 } from './chat/chat-manager';
 import { SDK_VERSION } from './version';
+import { getTranslations, type Translations } from './i18n/translations';
 
 // ─── Defaults ────────────────────────────────────────────────────────
 
@@ -56,6 +57,8 @@ export class SupportSDK {
   private userContext: UserContext | null = null;
   private metadata: Record<string, unknown> = {};
   private destroyed = false;
+  private locale: string;
+  private translations: Translations;
 
   // Frozen data from error auto-capture
   private frozenErrorInfo: ErrorInfo | null = null;
@@ -63,6 +66,10 @@ export class SupportSDK {
   private constructor(config: SupportSDKConfig) {
     this.config = config;
     this.userContext = config.user ?? null;
+    this.locale =
+      config.locale ??
+      (typeof navigator !== 'undefined' ? navigator.language : 'en');
+    this.translations = getTranslations(this.locale);
   }
 
   static init(config: SupportSDKConfig): SupportSDK {
@@ -147,7 +154,7 @@ export class SupportSDK {
     });
 
     // 4. Create review modal
-    this.modal = createReviewModal(uiConfig, {
+    this.modal = createReviewModal(uiConfig, this.translations, {
       onSubmit: async ({ report, screenshot }) => {
         // Enrich report with SDK-level context
         report.user = this.userContext;
@@ -173,6 +180,7 @@ export class SupportSDK {
         endpoint: this.config.endpoint,
         auth,
         maxMessages: chatConfig.maxMessages ?? 20,
+        locale: this.locale,
       });
       this.modal.setChatManager(this.chatMgr);
 
@@ -193,7 +201,7 @@ export class SupportSDK {
     if (uiConfig.showTrigger !== false) {
       this.trigger = createTriggerButton({
         position: uiConfig.triggerPosition ?? 'bottom-right',
-        label: uiConfig.triggerLabel ?? 'Report Issue',
+        label: uiConfig.triggerLabel ?? this.translations.triggerLabel,
         primaryColor,
         onClick: () => this.triggerReport(),
       });

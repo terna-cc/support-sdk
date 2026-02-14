@@ -8,6 +8,7 @@ import type {
   BrowserInfo,
   Breadcrumb,
 } from '../types';
+import { getTranslations } from '../i18n/translations';
 
 // Mock URL.createObjectURL since jsdom doesn't support it
 const originalCreateObjectURL = URL.createObjectURL;
@@ -110,7 +111,7 @@ describe('createReviewModal', () => {
   });
 
   it('mounts inside Shadow DOM when opened', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     const data: ModalData = {
       consoleLogs: makeConsoleLogs(3),
     };
@@ -123,7 +124,7 @@ describe('createReviewModal', () => {
   });
 
   it('injects styles into Shadow DOM', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const style = getShadow()!.querySelector('style');
@@ -132,7 +133,7 @@ describe('createReviewModal', () => {
   });
 
   it('displays modal title', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const title = getShadow()!.querySelector('.modal-title');
@@ -142,7 +143,7 @@ describe('createReviewModal', () => {
 
   it('displays custom modal title', () => {
     config.modalTitle = 'Custom Title';
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const title = getShadow()!.querySelector('.modal-title');
@@ -150,7 +151,7 @@ describe('createReviewModal', () => {
   });
 
   it('renders category checkboxes for provided data', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(5),
       networkLogs: makeNetworkLogs(3),
@@ -163,7 +164,7 @@ describe('createReviewModal', () => {
   });
 
   it('all checkboxes are checked by default', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(5),
       networkLogs: makeNetworkLogs(3),
@@ -178,7 +179,7 @@ describe('createReviewModal', () => {
   });
 
   it('category checkboxes toggle inclusion', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(5),
       networkLogs: makeNetworkLogs(3),
@@ -201,7 +202,7 @@ describe('createReviewModal', () => {
   });
 
   it('shows entry count for categories', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(23),
       networkLogs: makeNetworkLogs(12),
@@ -215,7 +216,7 @@ describe('createReviewModal', () => {
   });
 
   it('send button is disabled when no categories are checked', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(1),
     });
@@ -236,7 +237,7 @@ describe('createReviewModal', () => {
   });
 
   it('send button is enabled when at least one category is checked', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(1),
       networkLogs: makeNetworkLogs(1),
@@ -258,7 +259,7 @@ describe('createReviewModal', () => {
   });
 
   it('onSubmit called with correct report shape', async () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     const consoleLogs = makeConsoleLogs(3);
     const networkLogs = makeNetworkLogs(2);
     const browserInfo = makeBrowserInfo();
@@ -284,7 +285,7 @@ describe('createReviewModal', () => {
   });
 
   it('onSubmit excludes unchecked categories', async () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     const consoleLogs = makeConsoleLogs(3);
     const networkLogs = makeNetworkLogs(2);
     modal.open({ consoleLogs, networkLogs });
@@ -311,7 +312,7 @@ describe('createReviewModal', () => {
   });
 
   it('includes screenshot Blob when screenshot category is checked', async () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     const screenshot = new Blob(['test'], { type: 'image/png' });
     modal.open({ screenshot, consoleLogs: makeConsoleLogs(1) });
 
@@ -328,7 +329,7 @@ describe('createReviewModal', () => {
   });
 
   it('onCancel called when cancel button is clicked', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const cancelBtn = getShadow()!.querySelector(
@@ -340,7 +341,7 @@ describe('createReviewModal', () => {
   });
 
   it('onCancel called when close button (X) is clicked', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const closeBtn = getShadow()!.querySelector(
@@ -352,7 +353,7 @@ describe('createReviewModal', () => {
   });
 
   it('onCancel called when Escape is pressed', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const backdrop = getShadow()!.querySelector(
@@ -366,7 +367,7 @@ describe('createReviewModal', () => {
   });
 
   it('view toggle expands and collapses sections', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(3) });
 
     const viewBtn = getShadow()!.querySelector(
@@ -393,7 +394,7 @@ describe('createReviewModal', () => {
   });
 
   it('renders console log details when expanded', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: [
         { level: 'error', message: 'Test error', args: [], timestamp: 1000 },
@@ -418,7 +419,7 @@ describe('createReviewModal', () => {
   });
 
   it('renders network log details when expanded', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       networkLogs: [
         {
@@ -449,7 +450,7 @@ describe('createReviewModal', () => {
   });
 
   it('renders browser info when expanded', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ browserInfo: makeBrowserInfo() });
 
     const viewBtn = getShadow()!.querySelector(
@@ -470,7 +471,7 @@ describe('createReviewModal', () => {
   });
 
   it('renders breadcrumbs when expanded', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       breadcrumbs: [
         {
@@ -497,7 +498,7 @@ describe('createReviewModal', () => {
   });
 
   it('close() removes modal from DOM', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     expect(getHost()).not.toBeNull();
@@ -508,7 +509,7 @@ describe('createReviewModal', () => {
   });
 
   it('destroy() removes modal from DOM', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     expect(getHost()).not.toBeNull();
@@ -520,7 +521,7 @@ describe('createReviewModal', () => {
 
   it('locks body scroll when open and restores on close', () => {
     document.body.style.overflow = '';
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     expect(document.body.style.overflow).toBe('hidden');
@@ -531,7 +532,7 @@ describe('createReviewModal', () => {
   });
 
   it('renders textarea for description', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const textarea = getShadow()!.querySelector(
@@ -542,7 +543,7 @@ describe('createReviewModal', () => {
   });
 
   it('includes description text in submitted report', async () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const textarea = getShadow()!.querySelector(
@@ -567,7 +568,7 @@ describe('createReviewModal', () => {
   it('shows error message when onSubmit rejects', async () => {
     onSubmit.mockRejectedValueOnce(new Error('Network failure'));
 
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const sendBtn = getShadow()!.querySelector(
@@ -583,7 +584,7 @@ describe('createReviewModal', () => {
   });
 
   it('shows success message after successful submission', async () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const sendBtn = getShadow()!.querySelector(
@@ -599,7 +600,7 @@ describe('createReviewModal', () => {
   });
 
   it('sets role=dialog and aria-modal on backdrop', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const backdrop = getShadow()!.querySelector(
@@ -610,7 +611,7 @@ describe('createReviewModal', () => {
   });
 
   it('does not show screenshot section when no screenshot provided', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
     const preview = getShadow()!.querySelector('.screenshot-preview');
@@ -618,7 +619,7 @@ describe('createReviewModal', () => {
   });
 
   it('shows screenshot preview when screenshot provided', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     const screenshot = new Blob(['test'], { type: 'image/png' });
     modal.open({ screenshot, consoleLogs: makeConsoleLogs(1) });
 
@@ -631,7 +632,7 @@ describe('createReviewModal', () => {
   });
 
   it('only renders categories for data that is present', () => {
-    const modal = createReviewModal(config, callbacks);
+    const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({
       consoleLogs: makeConsoleLogs(3),
       // No network, no browser, no breadcrumbs

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createChatView, type ChatView } from '../chat-view';
 import type { ChatManager } from '../../chat/chat-manager';
 import type { ReportSummary } from '../../types';
+import { getTranslations } from '../../i18n/translations';
 
 function makeMockChatManager(
   overrides: Partial<ChatManager> = {},
@@ -46,11 +47,15 @@ describe('createChatView', () => {
     onCancel = vi.fn();
     onKeepChatting = vi.fn();
 
-    chatView = createChatView(mockManager, {
-      onSubmit,
-      onCancel,
-      onKeepChatting,
-    });
+    chatView = createChatView(
+      mockManager,
+      {
+        onSubmit,
+        onCancel,
+        onKeepChatting,
+      },
+      getTranslations('en'),
+    );
   });
 
   afterEach(() => {
@@ -456,6 +461,155 @@ describe('createChatView', () => {
       chatView.destroy();
 
       expect(document.body.contains(container)).toBe(false);
+    });
+  });
+
+  describe('markdown rendering', () => {
+    it('renders markdown in assistant messages on finalize', () => {
+      chatView.addAssistantChunk('**bold** and *italic*');
+      chatView.finalizeAssistantMessage();
+
+      const container = chatView.getContainer();
+      const bubble = container.querySelector('.assistant .chat-bubble');
+      expect(bubble?.innerHTML).toContain('<strong>bold</strong>');
+      expect(bubble?.innerHTML).toContain('<em>italic</em>');
+    });
+
+    it('renders markdown lists on finalize', () => {
+      chatView.addAssistantChunk('- item 1\n- item 2');
+      chatView.finalizeAssistantMessage();
+
+      const container = chatView.getContainer();
+      const bubble = container.querySelector('.assistant .chat-bubble');
+      expect(bubble?.innerHTML).toContain('<ul>');
+      expect(bubble?.innerHTML).toContain('<li>');
+    });
+
+    it('keeps user messages as plain text', () => {
+      chatView.addUserMessage('**not bold**');
+
+      const container = chatView.getContainer();
+      const bubble = container.querySelector('.user .chat-bubble');
+      expect(bubble?.textContent).toBe('**not bold**');
+      expect(bubble?.innerHTML).not.toContain('<strong>');
+    });
+
+    it('sanitizes HTML in rendered markdown', () => {
+      chatView.addAssistantChunk('<script>alert("xss")</script>');
+      chatView.finalizeAssistantMessage();
+
+      const container = chatView.getContainer();
+      const bubble = container.querySelector('.assistant .chat-bubble');
+      expect(bubble?.innerHTML).not.toContain('<script');
+    });
+
+    it('shows plain text during streaming, renders markdown on finalize', () => {
+      chatView.addAssistantChunk('**bold');
+      const container = chatView.getContainer();
+      const bubble = container.querySelector('.assistant .chat-bubble');
+
+      // During streaming, content should be plain text
+      expect(bubble?.textContent).toContain('**bold');
+
+      chatView.addAssistantChunk('**');
+      chatView.finalizeAssistantMessage();
+
+      // After finalize, should be rendered markdown
+      expect(bubble?.innerHTML).toContain('<strong>bold</strong>');
+    });
+  });
+
+  describe('i18n / translations', () => {
+    it('uses translation for input placeholder', () => {
+      const container = chatView.getContainer();
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
+      expect(input.placeholder).toBe('Type your message...');
+    });
+
+    it('uses Spanish translations when configured', () => {
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
+
+      const container = esView.getContainer();
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
+      expect(input.placeholder).toBe('Escribe tu mensaje...');
+
+      esView.destroy();
+    });
+
+    it('uses translated category labels in summary', () => {
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
+
+      esView.showSummary(mockSummary);
+
+      const container = esView.getContainer();
+      const badge = container.querySelector('.summary-category-badge');
+      expect(badge?.textContent).toContain('Reporte de error');
+
+      esView.destroy();
+    });
+
+    it('uses translated section labels in summary', () => {
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
+
+      esView.showSummary(mockSummary);
+
+      const container = esView.getContainer();
+      const labels = container.querySelectorAll('.summary-section-label');
+      const labelTexts = Array.from(labels).map((l) => l.textContent);
+      expect(labelTexts).toContain('Pasos para reproducir');
+      expect(labelTexts).toContain('Comportamiento esperado');
+      expect(labelTexts).toContain('Comportamiento actual');
+
+      esView.destroy();
+    });
+
+    it('uses translated Keep chatting and Submit buttons', () => {
+      const esView = createChatView(
+        mockManager,
+        {
+          onSubmit,
+          onCancel,
+          onKeepChatting,
+        },
+        getTranslations('es'),
+      );
+
+      esView.showSummary(mockSummary);
+
+      const container = esView.getContainer();
+      const buttons = container.querySelectorAll('.summary-actions .btn');
+      expect(buttons[0].textContent).toContain('Seguir conversando');
+      expect(buttons[1].textContent).toContain('Enviar');
+
+      esView.destroy();
     });
   });
 });

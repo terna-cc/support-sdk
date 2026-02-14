@@ -751,6 +751,103 @@ export const chatStyles = `
     background: #f3f4f6;
     color: var(--support-text);
     border-bottom-left-radius: 4px;
+    white-space: normal;
+  }
+
+  /* ── Markdown styles in assistant bubbles ── */
+
+  .assistant .chat-bubble p {
+    margin: 0 0 8px 0;
+  }
+
+  .assistant .chat-bubble p:last-child {
+    margin-bottom: 0;
+  }
+
+  .assistant .chat-bubble strong {
+    font-weight: 600;
+  }
+
+  .assistant .chat-bubble em {
+    font-style: italic;
+  }
+
+  .assistant .chat-bubble h1,
+  .assistant .chat-bubble h2,
+  .assistant .chat-bubble h3,
+  .assistant .chat-bubble h4,
+  .assistant .chat-bubble h5,
+  .assistant .chat-bubble h6 {
+    margin: 12px 0 4px 0;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .assistant .chat-bubble h1 { font-size: 18px; }
+  .assistant .chat-bubble h2 { font-size: 16px; }
+  .assistant .chat-bubble h3 { font-size: 15px; }
+  .assistant .chat-bubble h4,
+  .assistant .chat-bubble h5,
+  .assistant .chat-bubble h6 { font-size: 14px; }
+
+  .assistant .chat-bubble h1:first-child,
+  .assistant .chat-bubble h2:first-child,
+  .assistant .chat-bubble h3:first-child,
+  .assistant .chat-bubble h4:first-child,
+  .assistant .chat-bubble h5:first-child,
+  .assistant .chat-bubble h6:first-child {
+    margin-top: 0;
+  }
+
+  .assistant .chat-bubble ul,
+  .assistant .chat-bubble ol {
+    margin: 4px 0 8px 0;
+    padding-left: 20px;
+  }
+
+  .assistant .chat-bubble ul:last-child,
+  .assistant .chat-bubble ol:last-child {
+    margin-bottom: 0;
+  }
+
+  .assistant .chat-bubble li {
+    margin-bottom: 2px;
+  }
+
+  .assistant .chat-bubble code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
+      Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+
+  .assistant .chat-bubble pre {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 8px 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 4px 0 8px 0;
+  }
+
+  .assistant .chat-bubble pre:last-child {
+    margin-bottom: 0;
+  }
+
+  .assistant .chat-bubble pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .assistant .chat-bubble a {
+    color: var(--support-primary-color);
+    text-decoration: underline;
+  }
+
+  .assistant .chat-bubble a:hover {
+    text-decoration: none;
   }
 
   .user .chat-bubble {
