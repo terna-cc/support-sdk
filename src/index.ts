@@ -1,26 +1,5 @@
-import type { SupportSDKConfig, DiagnosticReport } from './types';
-
-export class SupportSDK {
-  private config: SupportSDKConfig;
-
-  constructor(config: SupportSDKConfig) {
-    this.config = config;
-  }
-
-  async init(): Promise<void> {
-    // TODO: Start capture modules, attach UI
-    void this.config;
-  }
-
-  async destroy(): Promise<void> {
-    // TODO: Stop capture modules, remove UI, restore patched globals
-  }
-
-  async submitReport(_description: string): Promise<DiagnosticReport> {
-    // TODO: Gather data from all capture modules, sanitize, submit
-    throw new Error('Not implemented');
-  }
-}
+export { SupportSDK } from './sdk';
+export { SDK_VERSION } from './version';
 
 export type {
   SupportSDKConfig,

@@ -11,6 +11,7 @@ A standalone, framework-agnostic JavaScript/TypeScript SDK that captures client-
 - **Screenshot capture** — takes a screenshot of the current page
 - **Browser info** — collects viewport, user agent, screen dimensions
 - **User breadcrumbs** — tracks clicks, navigation, and custom events
+- **Error auto-capture** — detects uncaught errors and unhandled rejections, shows a toast for user consent
 - **Privacy-first** — 3-layer sanitization (capture-time, pre-submission review, server-side)
 - **Shadow DOM UI** — review modal and trigger button isolated from host styles
 - **Framework-agnostic** — vanilla JS core, works with any web app
@@ -27,40 +28,153 @@ npm install @terna/support-sdk
 ```ts
 import { SupportSDK } from '@terna/support-sdk';
 
-const sdk = new SupportSDK({
-  endpoint: 'https://your-api.com/reports',
-  auth: { type: 'api-key', key: 'your-api-key' },
+const sdk = SupportSDK.init({
+  endpoint: 'https://your-api.com',
+  auth: { type: 'api-key', key: 'your-project-key' },
 });
-
-await sdk.init();
-
-// SDK captures diagnostics in the background.
-// When the user clicks the trigger button, they review
-// captured data and submit a report.
 ```
+
+That's it. The SDK captures diagnostics in the background. A floating trigger button lets users review captured data and submit a report.
 
 ### Script Tag
 
 ```html
 <script src="https://unpkg.com/@terna/support-sdk/dist/index.global.js"></script>
 <script>
-  const sdk = new SupportSDK.SupportSDK({
-    endpoint: 'https://your-api.com/reports',
+  SupportSDK.SupportSDK.init({
+    endpoint: 'https://your-api.com',
     auth: { type: 'none' },
   });
-  sdk.init();
 </script>
 ```
 
-## Backend Contract
-
-The SDK defines the API contract. Import the types to implement a compatible backend:
+## Configuration
 
 ```ts
-import type { DiagnosticReport, ReportCreateResponse } from '@terna/support-sdk/contract';
+const sdk = SupportSDK.init({
+  // Required — base URL of your backend
+  endpoint: 'https://your-api.com',
+
+  // Authentication (optional, defaults to { type: 'none' })
+  auth: { type: 'api-key', key: 'your-project-key' },
+
+  // Capture modules (optional — all enabled by default)
+  capture: {
+    console: { maxItems: 100 },   // or false to disable
+    network: { maxItems: 50 },    // or false to disable
+    breadcrumbs: { maxItems: 50 },// or false to disable
+    screenshot: true,             // false to disable
+  },
+
+  // Privacy overrides (optional)
+  privacy: {
+    redactPatterns: [/SSN-\d{3}-\d{2}-\d{4}/g],
+    sensitiveHeaders: ['x-custom-secret'],
+    sensitiveParams: ['session_id'],
+    maxBodySize: 10_000,
+    stripBodies: false,
+  },
+
+  // UI customization (optional)
+  ui: {
+    triggerPosition: 'bottom-right', // 'bottom-left' | 'top-right' | 'top-left'
+    triggerLabel: 'Report Issue',
+    modalTitle: 'Submit Bug Report',
+    showTrigger: true,               // false to hide the floating button
+  },
+
+  // User context attached to every report (optional)
+  user: { id: '123', email: 'user@example.com', name: 'Jane' },
+});
 ```
 
-Any backend (Express, FastAPI, Rails, etc.) can implement the contract to receive reports.
+### Configuration Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `endpoint` | `string` | *required* | Base URL of the backend that receives reports |
+| `auth` | `AuthConfig` | `{ type: 'none' }` | Authentication strategy |
+| `capture.console` | `object \| false` | `{ maxItems: 100 }` | Console log capture settings |
+| `capture.network` | `object \| false` | `{ maxItems: 50 }` | Network request capture settings |
+| `capture.breadcrumbs` | `object \| false` | `{ maxItems: 50 }` | User action breadcrumb settings |
+| `capture.screenshot` | `boolean` | `true` | Enable screenshot capture |
+| `privacy.redactPatterns` | `RegExp[]` | `[]` | Additional regex patterns to redact |
+| `privacy.sensitiveHeaders` | `string[]` | `[]` | Additional headers to strip |
+| `privacy.sensitiveParams` | `string[]` | `[]` | Additional URL params to redact |
+| `privacy.maxBodySize` | `number` | `10000` | Max request/response body size in bytes |
+| `privacy.stripBodies` | `boolean` | `false` | Strip all request/response bodies |
+| `ui.triggerPosition` | `string` | `'bottom-right'` | Position of the floating button |
+| `ui.triggerLabel` | `string` | `'Report Issue'` | Label text on the trigger button |
+| `ui.modalTitle` | `string` | `'Send Diagnostic Report'` | Title of the review modal |
+| `ui.showTrigger` | `boolean` | `true` | Show the floating trigger button |
+| `user` | `UserContext` | `undefined` | User context attached to reports |
+
+### Auth Types
+
+```ts
+// API key (sent as a custom header)
+{ type: 'api-key', key: 'your-key', headerName?: 'X-Project-Key' }
+
+// Bearer token (string or async function)
+{ type: 'bearer', token: 'your-token' }
+{ type: 'bearer', token: () => getTokenFromAuth() }
+
+// Custom handler
+{ type: 'custom', handler: (headers) => headers.set('Authorization', 'Custom xyz') }
+
+// No auth
+{ type: 'none' }
+```
+
+## Programmatic API
+
+### `SupportSDK.init(config): SupportSDK`
+
+Initialize the SDK. Returns the singleton instance. Calling `init()` again without `destroy()` warns and returns the existing instance.
+
+### `sdk.triggerReport(options?): void`
+
+Manually trigger a report. Freezes all capture buffers, takes a screenshot, and opens the review modal.
+
+```ts
+sdk.triggerReport();
+```
+
+### `sdk.addBreadcrumb(crumb): void`
+
+Add a custom breadcrumb entry.
+
+```ts
+sdk.addBreadcrumb({
+  type: 'custom',
+  message: 'User completed onboarding',
+  data: { step: 3 },
+});
+```
+
+### `sdk.setUser(user): void`
+
+Update the user context attached to future reports.
+
+```ts
+sdk.setUser({ id: '123', email: 'user@example.com', name: 'Jane' });
+```
+
+### `sdk.setMetadata(metadata): void`
+
+Set arbitrary metadata attached to future reports.
+
+```ts
+sdk.setMetadata({ environment: 'production', appVersion: '2.1.0' });
+```
+
+### `sdk.destroy(): void`
+
+Tear down the SDK: stops all capture modules (restoring patched globals), removes all DOM elements, and clears the singleton.
+
+```ts
+sdk.destroy();
+```
 
 ## Privacy
 
@@ -72,51 +186,45 @@ All data passes through three sanitization layers:
 2. **Pre-submission** — full sanitizer pass + user reviews all data in a modal before sending
 3. **Server-side** — backend should re-run redaction (documented in the contract)
 
-Auto-redacted patterns: JWTs, email addresses, phone numbers, and sensitive URL parameters (`token`, `key`, `secret`, `password`, `code`, `otp`).
+### What is always redacted
 
-## Configuration
+- `Authorization`, `Cookie`, `Set-Cookie` headers — stripped entirely
+- JWT tokens → `[REDACTED:jwt]`
+- Email addresses → `[REDACTED:email]`
+- Phone numbers → `[REDACTED:phone]`
+- URL params: `token`, `key`, `secret`, `password`, `code`, `otp` → `[REDACTED]`
+
+### User consent flow
+
+1. Data is captured in the background into ring buffers
+2. When a report is triggered (manually or via error detection), the user sees a review modal
+3. The modal shows all captured data with checkboxes — the user chooses what to include
+4. Only after the user clicks "Send Report" is any data transmitted to the backend
+
+## Backend Contract
+
+The SDK defines the API contract. Import the types to implement a compatible backend:
 
 ```ts
-const sdk = new SupportSDK({
-  // Required
-  endpoint: 'https://your-api.com/reports',
-
-  // Auth — choose one
-  auth:
-    | { type: 'api-key'; key: string; headerName?: string }
-    | { type: 'bearer'; token: string | (() => string | Promise<string>) }
-    | { type: 'custom'; handler: (headers: Headers) => void | Promise<void> }
-    | { type: 'none' },
-
-  // Capture settings
-  capture: {
-    console: { maxItems: 100, levels: ['log', 'warn', 'error'] },
-    network: { maxItems: 50, urlFilter: (url) => !url.includes('/health') },
-    breadcrumbs: { maxItems: 50 },
-    screenshot: true,
-  },
-
-  // Privacy overrides
-  privacy: {
-    redactPatterns: [/SSN-\d{3}-\d{2}-\d{4}/g],
-    sensitiveHeaders: ['x-custom-secret'],
-    sensitiveParams: ['session_id'],
-    maxBodySize: 10_000,
-    stripBodies: false,
-  },
-
-  // UI customization
-  ui: {
-    triggerPosition: 'bottom-right',
-    triggerLabel: 'Report Issue',
-    modalTitle: 'Submit Bug Report',
-    showTrigger: true,
-  },
-
-  // User context attached to reports
-  user: { id: '123', email: 'user@example.com', name: 'Jane' },
-});
+import type {
+  DiagnosticReport,
+  ReportCreateResponse,
+} from '@terna/support-sdk/contract';
 ```
+
+**Expected endpoint:** `POST {endpoint}/reports`
+
+The SDK sends a `multipart/form-data` request with:
+- `report` — JSON string of the `DiagnosticReport`
+- `screenshot` — JPEG blob (optional)
+
+The backend should return a JSON response matching `ReportCreateResponse`:
+
+```json
+{ "id": "report-uuid", "createdAt": "2025-01-01T00:00:00Z" }
+```
+
+Any backend (Express, FastAPI, Rails, etc.) can implement the contract to receive reports.
 
 ## Development
 
