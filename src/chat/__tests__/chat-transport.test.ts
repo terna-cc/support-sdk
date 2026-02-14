@@ -376,4 +376,65 @@ describe('streamChat', () => {
     const body = JSON.parse(capturedBody);
     expect(body.diagnostic_context).toBeNull();
   });
+
+  it('includes locale in request body when provided', async () => {
+    let capturedBody = '';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init: RequestInit) => {
+        capturedBody = init.body as string;
+        return Promise.resolve(
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
+        );
+      }),
+    );
+
+    await streamChat(
+      'https://api.test.com',
+      [],
+      null,
+      new Headers(),
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new AbortController().signal,
+      'es',
+    );
+
+    const body = JSON.parse(capturedBody);
+    expect(body.locale).toBe('es');
+  });
+
+  it('omits locale from request body when not provided', async () => {
+    let capturedBody = '';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init: RequestInit) => {
+        capturedBody = init.body as string;
+        return Promise.resolve(
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
+        );
+      }),
+    );
+
+    await streamChat(
+      'https://api.test.com',
+      [],
+      null,
+      new Headers(),
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new AbortController().signal,
+    );
+
+    const body = JSON.parse(capturedBody);
+    expect(body.locale).toBeUndefined();
+  });
 });

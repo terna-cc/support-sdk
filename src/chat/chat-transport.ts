@@ -9,6 +9,7 @@ export async function streamChat(
   onSummary: (summary: ReportSummary) => void,
   onDone: () => void,
   signal: AbortSignal,
+  locale?: string,
 ): Promise<void> {
   const url = `${endpoint.replace(/\/+$/, '')}/chat`;
 
@@ -22,6 +23,7 @@ export async function streamChat(
     body: JSON.stringify({
       messages,
       diagnostic_context: diagnosticContext,
+      ...(locale ? { locale } : {}),
     }),
     signal,
   });

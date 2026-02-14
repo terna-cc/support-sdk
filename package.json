@@ -54,6 +54,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "marked": "^17.0.2",
     "modern-screenshot": "^4.6.8"
   }
 }

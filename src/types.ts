@@ -8,6 +8,7 @@ export interface SupportSDKConfig {
   ui?: UIConfig;
   user?: UserContext;
   chat?: ChatConfig;
+  locale?: string;
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────

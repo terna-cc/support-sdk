@@ -1,6 +1,8 @@
 import { chatStyles } from './styles';
 import type { ChatMessage, ReportSummary } from '../types';
 import type { ChatManager } from '../chat/chat-manager';
+import { renderMarkdown } from '../core/markdown';
+import type { Translations } from '../i18n/translations';
 
 // ─── Public interfaces ─────────────────────────────────────────────
 
@@ -45,11 +47,13 @@ const CATEGORY_ICONS: Record<string, string> = {
   feature_request: '\u{2728}',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  bug: 'Bug Report',
-  feedback: 'Feedback',
-  feature_request: 'Feature Request',
-};
+function getCategoryLabels(t: Translations): Record<string, string> {
+  return {
+    bug: t.categoryBug,
+    feedback: t.categoryFeedback,
+    feature_request: t.categoryFeature,
+  };
+}
 
 // ─── Send icon SVG ──────────────────────────────────────────────────
 
@@ -82,6 +86,7 @@ function createSendIcon(): SVGSVGElement {
 export function createChatView(
   chatManager: ChatManager,
   callbacks: ChatViewCallbacks,
+  translations: Translations,
 ): ChatView {
   // Root container
   const container = el('div', 'chat-container');
@@ -103,6 +108,7 @@ export function createChatView(
   // ── Current streaming bubble ──
   let currentStreamingBubble: HTMLElement | null = null;
   let currentStreamingCursor: HTMLElement | null = null;
+  let currentStreamingContent = '';
 
   // ── Error area ──
   let errorEl: HTMLElement | null = null;
@@ -111,7 +117,7 @@ export function createChatView(
   const inputArea = el('div', 'chat-input-area');
 
   const chatInput = el('textarea', 'chat-input');
-  chatInput.placeholder = 'Type your message...';
+  chatInput.placeholder = translations.inputPlaceholder;
   chatInput.rows = 1;
   chatInput.setAttribute('aria-label', 'Chat message input');
 
@@ -190,13 +196,16 @@ export function createChatView(
       const msg = createAssistantMessage();
       messagesContainer.appendChild(msg);
       currentStreamingBubble = msg.querySelector('.chat-bubble')!;
+      currentStreamingContent = '';
 
       // Add blinking cursor
       currentStreamingCursor = el('span', 'streaming-cursor');
       currentStreamingBubble.appendChild(currentStreamingCursor);
     }
 
-    // Insert text before the cursor
+    currentStreamingContent += text;
+
+    // Insert text before the cursor (plain text during streaming)
     if (currentStreamingCursor && currentStreamingCursor.parentNode) {
       const textNode = document.createTextNode(text);
       currentStreamingBubble.insertBefore(textNode, currentStreamingCursor);
@@ -206,11 +215,22 @@ export function createChatView(
   }
 
   function finalizeAssistantMessage(): void {
-    if (currentStreamingCursor) {
+    // Render accumulated markdown content as HTML
+    if (currentStreamingBubble && currentStreamingContent) {
+      const html = renderMarkdown(currentStreamingContent);
+      // Remove the streaming cursor first
+      if (currentStreamingCursor) {
+        currentStreamingCursor.remove();
+        currentStreamingCursor = null;
+      }
+      // Replace plain text with rendered markdown
+      currentStreamingBubble.innerHTML = html;
+    } else if (currentStreamingCursor) {
       currentStreamingCursor.remove();
       currentStreamingCursor = null;
     }
     currentStreamingBubble = null;
+    currentStreamingContent = '';
   }
 
   function showThinking(): void {
@@ -288,7 +308,8 @@ export function createChatView(
     // Category badge
     const badge = el('div', `summary-category-badge ${summary.category}`);
     const icon = CATEGORY_ICONS[summary.category] ?? '';
-    const label = CATEGORY_LABELS[summary.category] ?? summary.category;
+    const categoryLabels = getCategoryLabels(translations);
+    const label = categoryLabels[summary.category] ?? summary.category;
     badge.textContent = `${icon} ${label}`;
     card.appendChild(badge);
 
@@ -306,7 +327,7 @@ export function createChatView(
     if (summary.steps_to_reproduce && summary.steps_to_reproduce.length > 0) {
       const section = el('div', 'summary-section');
       const sectionLabel = el('div', 'summary-section-label');
-      sectionLabel.textContent = 'Steps to Reproduce';
+      sectionLabel.textContent = translations.stepsToReproduce;
       section.appendChild(sectionLabel);
 
       const steps = el('ol', 'summary-steps');
@@ -323,7 +344,7 @@ export function createChatView(
     if (summary.expected_behavior) {
       const section = el('div', 'summary-section');
       const sectionLabel = el('div', 'summary-section-label');
-      sectionLabel.textContent = 'Expected Behavior';
+      sectionLabel.textContent = translations.expectedBehavior;
       section.appendChild(sectionLabel);
       const value = el('div', 'summary-section-value');
       value.textContent = summary.expected_behavior;
@@ -335,7 +356,7 @@ export function createChatView(
     if (summary.actual_behavior) {
       const section = el('div', 'summary-section');
       const sectionLabel = el('div', 'summary-section-label');
-      sectionLabel.textContent = 'Actual Behavior';
+      sectionLabel.textContent = translations.actualBehavior;
       section.appendChild(sectionLabel);
       const value = el('div', 'summary-section-value');
       value.textContent = summary.actual_behavior;
@@ -347,7 +368,7 @@ export function createChatView(
     const meta = el('div', 'summary-meta');
 
     const severityItem = el('span', 'summary-meta-item');
-    severityItem.innerHTML = 'Severity: ';
+    severityItem.innerHTML = `${translations.severity}: `;
     const severityValue = el('span', 'summary-meta-value');
     severityValue.textContent =
       summary.severity.charAt(0).toUpperCase() + summary.severity.slice(1);
@@ -374,11 +395,11 @@ export function createChatView(
 
     const keepChattingBtn = el('button', 'btn btn-secondary');
     keepChattingBtn.type = 'button';
-    keepChattingBtn.textContent = '\u2190 Keep chatting';
+    keepChattingBtn.textContent = `\u2190 ${translations.keepChatting}`;
 
     const submitBtn = el('button', 'btn btn-primary');
     submitBtn.type = 'button';
-    submitBtn.textContent = 'Submit \u2713';
+    submitBtn.textContent = `${translations.submitButton} \u2713`;
 
     keepChattingBtn.addEventListener('click', () => {
       callbacks.onKeepChatting();
@@ -392,7 +413,7 @@ export function createChatView(
       submitBtn.textContent = '';
       const spinner = el('span', 'spinner');
       submitBtn.appendChild(spinner);
-      submitBtn.appendChild(document.createTextNode(' Submitting...'));
+      submitBtn.appendChild(document.createTextNode(` ${translations.submitting}`));
 
       try {
         await callbacks.onSubmit({
@@ -404,7 +425,7 @@ export function createChatView(
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
         showError(
-          err instanceof Error ? err.message : 'Failed to submit report',
+          err instanceof Error ? err.message : translations.submitFailed,
         );
       }
     });
@@ -422,6 +443,7 @@ export function createChatView(
     container.remove();
     currentStreamingBubble = null;
     currentStreamingCursor = null;
+    currentStreamingContent = '';
     thinkingEl = null;
     errorEl = null;
     summaryContainer = null;
