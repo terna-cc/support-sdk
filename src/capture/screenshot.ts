@@ -1,0 +1,2 @@
+// Screenshot capture — placeholder
+export {};

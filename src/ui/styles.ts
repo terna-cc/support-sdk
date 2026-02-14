@@ -1,0 +1,2 @@
+// Embedded CSS — placeholder
+export {};
