@@ -20,9 +20,9 @@ export type AuthConfig =
 // ─── Capture ─────────────────────────────────────────────────────────
 
 export interface CaptureConfig {
-  console?: BufferConfig & { levels?: ConsoleLevel[] };
-  network?: BufferConfig & { urlFilter?: (url: string) => boolean };
-  breadcrumbs?: BufferConfig;
+  console?: false | (BufferConfig & { levels?: ConsoleLevel[] });
+  network?: false | (BufferConfig & { urlFilter?: (url: string) => boolean });
+  breadcrumbs?: false | BufferConfig;
   screenshot?: boolean;
 }
 
@@ -138,5 +138,7 @@ export interface DiagnosticReport {
   errors: ErrorInfo[];
   user: UserContext | null;
   metadata: Record<string, unknown>;
+  sdk_version: string;
+  captured_at: string;
   timestamp: number;
 }

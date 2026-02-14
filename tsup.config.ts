@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsup';
+import pkg from './package.json';
 
 export default defineConfig([
   {
@@ -12,6 +13,9 @@ export default defineConfig([
       if (format === 'cjs') return { js: '.cjs' };
       if (format === 'iife') return { js: '.global.js' };
       return { js: '.js' };
+    },
+    define: {
+      __SDK_VERSION__: JSON.stringify(pkg.version),
     },
     clean: true,
     sourcemap: true,

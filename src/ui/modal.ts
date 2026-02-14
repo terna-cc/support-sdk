@@ -291,6 +291,8 @@ export function createReviewModal(
       errors: data.errorInfo ? [data.errorInfo] : [],
       user: null,
       metadata: {},
+      sdk_version: '',
+      captured_at: new Date().toISOString(),
       timestamp: Date.now(),
     };
   }
