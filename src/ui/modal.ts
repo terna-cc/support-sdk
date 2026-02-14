@@ -7,7 +7,10 @@ import type {
   Breadcrumb,
   ErrorInfo,
   DiagnosticReport,
+  DiagnosticSnapshot,
 } from '../types';
+import type { ChatManager } from '../chat/chat-manager';
+import { createChatView, type ChatView } from './chat-view';
 
 // ─── Public interfaces ─────────────────────────────────────────────
 
@@ -32,6 +35,8 @@ export interface ReviewModal {
   open(data: ModalData): void;
   close(): void;
   destroy(): void;
+  setChatManager(manager: ChatManager | null): void;
+  setChatEnabled(enabled: boolean): void;
 }
 
 // ─── Category definition ───────────────────────────────────────────
@@ -197,6 +202,11 @@ export function createReviewModal(
   let removeTrap: (() => void) | null = null;
   let currentData: ModalData | null = null;
 
+  // Chat mode support
+  let chatManager: ChatManager | null = null;
+  let chatEnabled = false;
+  let chatView: ChatView | null = null;
+
   // Track checkbox state per category key
   const checkedState = new Map<string, boolean>();
 
@@ -308,6 +318,153 @@ export function createReviewModal(
     sendBtn.disabled = !hasAnyChecked();
   }
 
+  function buildDiagnosticSnapshot(data: ModalData): DiagnosticSnapshot {
+    return {
+      errors: data.errorInfo ? [data.errorInfo] : [],
+      failedRequests: (data.networkLogs ?? []).filter(
+        (r) => r.status !== null && (r.status === 0 || r.status >= 400),
+      ),
+      consoleErrors: (data.consoleLogs ?? []).filter(
+        (l) => l.level === 'error',
+      ),
+      breadcrumbs: data.breadcrumbs ?? [],
+      browser: data.browserInfo ?? {
+        userAgent: '',
+        browser: '',
+        os: '',
+        language: '',
+        platform: '',
+        timezone: '',
+        online: false,
+        screenWidth: 0,
+        screenHeight: 0,
+        viewportWidth: 0,
+        viewportHeight: 0,
+        devicePixelRatio: 0,
+        url: '',
+        referrer: '',
+      },
+      currentUrl: data.browserInfo?.url ?? window.location.href,
+    };
+  }
+
+  function openChatMode(
+    data: ModalData,
+    manager: ChatManager,
+    closeFn: () => void,
+    cancelFn: () => void,
+  ): { content: HTMLElement; onMount: () => void } {
+    const content = el('div', 'modal-content');
+
+    // ── Header ──
+    const header = el('div', 'modal-header');
+    const title = el('span', 'modal-title');
+    title.textContent = config.modalTitle ?? 'Report Issue';
+    const closeBtn = el('button', 'modal-close');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    const closeSvg = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg',
+    );
+    closeSvg.setAttribute('width', '20');
+    closeSvg.setAttribute('height', '20');
+    closeSvg.setAttribute('viewBox', '0 0 20 20');
+    closeSvg.setAttribute('fill', 'currentColor');
+    const closePath = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'path',
+    );
+    closePath.setAttribute(
+      'd',
+      'M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z',
+    );
+    closeSvg.appendChild(closePath);
+    closeBtn.appendChild(closeSvg);
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    content.appendChild(header);
+
+    closeBtn.addEventListener('click', () => {
+      closeFn();
+      cancelFn();
+    });
+
+    // ── Chat View ──
+    chatView = createChatView(manager, {
+      onSubmit: async ({ description, conversation, aiSummary }) => {
+        if (!currentData) return;
+
+        const report = buildReport(currentData, description);
+        // Enrich with conversation and summary
+        report.metadata = {
+          ...report.metadata,
+          conversation: conversation as unknown as Record<string, unknown>[],
+          ai_summary: aiSummary as unknown as Record<string, unknown>,
+        };
+
+        const screenshot =
+          checkedState.get('screenshot') && currentData.screenshot
+            ? currentData.screenshot
+            : undefined;
+
+        await callbacks.onSubmit({ report, screenshot });
+
+        // Close after brief delay on success
+        setTimeout(() => closeFn(), 1500);
+      },
+      onCancel: () => {
+        closeFn();
+        cancelFn();
+      },
+      onKeepChatting: () => {
+        if (chatView) {
+          chatView.showChat();
+          manager.sendMessage("I'd like to adjust the summary");
+        }
+      },
+    });
+
+    content.appendChild(chatView.getContainer());
+
+    // Wire up chat manager callbacks
+    manager.onTextChunk((chunk) => {
+      chatView?.addAssistantChunk(chunk);
+      chatView?.setInputEnabled(false);
+    });
+
+    manager.onSummary((summary) => {
+      chatView?.finalizeAssistantMessage();
+      chatView?.hideThinking();
+      chatView?.showSummary(summary);
+    });
+
+    manager.onDone(() => {
+      chatView?.finalizeAssistantMessage();
+      chatView?.hideThinking();
+      chatView?.setInputEnabled(true);
+    });
+
+    manager.onError((err) => {
+      chatView?.hideThinking();
+      chatView?.finalizeAssistantMessage();
+      chatView?.setInputEnabled(true);
+      chatView?.showError(err.message);
+    });
+
+    // Start the chat
+    const snapshot = buildDiagnosticSnapshot(data);
+
+    return {
+      content,
+      onMount: () => {
+        chatView?.showThinking();
+        manager.start(snapshot);
+        closeBtn.focus();
+      },
+    };
+  }
+
   function open(data: ModalData): void {
     if (host) close();
     currentData = data;
@@ -329,6 +486,47 @@ export function createReviewModal(
       'aria-label',
       config.modalTitle ?? 'Send Diagnostic Report',
     );
+
+    // Determine mode: chat or classic textarea
+    const useChatMode = chatEnabled && chatManager !== null;
+
+    if (useChatMode) {
+      const { content, onMount } = openChatMode(
+        data,
+        chatManager!,
+        () => close(),
+        () => callbacks.onCancel(),
+      );
+
+      // Escape key handler
+      const handleEscape = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') {
+          close();
+          callbacks.onCancel();
+        }
+      };
+
+      // Click outside
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          close();
+          callbacks.onCancel();
+        }
+      });
+
+      backdrop.appendChild(content);
+      shadow.appendChild(backdrop);
+
+      document.body.appendChild(host);
+      unlockScroll = lockBodyScroll();
+      removeTrap = trapFocus(backdrop);
+      backdrop.addEventListener('keydown', handleEscape);
+
+      onMount();
+      return;
+    }
+
+    // ── Classic textarea mode ──
 
     // Content container
     const content = el('div', 'modal-content');
@@ -592,6 +790,13 @@ export function createReviewModal(
   }
 
   function close(): void {
+    if (chatView) {
+      chatView.destroy();
+      chatView = null;
+    }
+    if (chatManager) {
+      chatManager.abort();
+    }
     if (removeTrap) {
       removeTrap();
       removeTrap = null;
@@ -613,5 +818,13 @@ export function createReviewModal(
     close();
   }
 
-  return { open, close, destroy };
+  function setChatManager(manager: ChatManager | null): void {
+    chatManager = manager;
+  }
+
+  function setChatEnabled(enabled: boolean): void {
+    chatEnabled = enabled;
+  }
+
+  return { open, close, destroy, setChatManager, setChatEnabled };
 }

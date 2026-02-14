@@ -16,6 +16,10 @@ export type {
   Breadcrumb,
   ErrorInfo,
   DiagnosticReport,
+  ChatConfig,
+  ChatMessage,
+  DiagnosticSnapshot,
+  ReportSummary,
 } from './types';
 
 export { RingBuffer } from './core/ring-buffer';
