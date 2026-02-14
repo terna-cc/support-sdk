@@ -6,6 +6,7 @@ import type {
   BrowserInfo,
   Breadcrumb,
   ErrorInfo,
+  RageClick,
   DiagnosticReport,
   DiagnosticSnapshot,
   AttachmentMetadata,
@@ -23,6 +24,7 @@ export interface ModalData {
   networkLogs?: NetworkEntry[];
   browserInfo?: BrowserInfo;
   breadcrumbs?: Breadcrumb[];
+  rageClicks?: RageClick[];
   errorInfo?: ErrorInfo;
 }
 
@@ -299,6 +301,7 @@ export function createReviewModal(
             },
       screenshot: null, // Blob is sent separately
       errors: data.errorInfo ? [data.errorInfo] : [],
+      rageClicks: data.rageClicks ?? [],
       user: null,
       metadata: {},
       sdk_version: '',
@@ -328,6 +331,7 @@ export function createReviewModal(
         (l) => l.level === 'error',
       ),
       breadcrumbs: data.breadcrumbs ?? [],
+      rageClicks: data.rageClicks ?? [],
       browser: data.browserInfo ?? {
         userAgent: '',
         browser: '',

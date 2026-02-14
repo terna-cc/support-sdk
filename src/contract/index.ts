@@ -5,6 +5,7 @@ export type {
   BrowserInfo,
   Breadcrumb,
   ErrorInfo,
+  RageClick,
   UserContext,
 } from '../types';
 

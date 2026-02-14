@@ -29,12 +29,20 @@ export interface AttachmentConfig {
   allowedTypes?: string[];
 }
 
+export interface RageClickConfig {
+  threshold?: number;
+  timeWindow?: number;
+  radiusPx?: number;
+  maxItems?: number;
+}
+
 export interface CaptureConfig {
   console?: false | (BufferConfig & { levels?: ConsoleLevel[] });
   network?: false | (BufferConfig & { urlFilter?: (url: string) => boolean });
   breadcrumbs?: false | BufferConfig;
   screenshot?: boolean;
   attachments?: AttachmentConfig;
+  rageClicks?: false | RageClickConfig;
 }
 
 export interface BufferConfig {
@@ -136,6 +144,15 @@ export interface ErrorInfo {
   timestamp: number;
 }
 
+export interface RageClick {
+  element: string;
+  x: number;
+  y: number;
+  clicks: number;
+  timestamp: number;
+  url: string;
+}
+
 // ─── Attachment Metadata ──────────────────────────────────────────────
 
 export interface AttachmentMetadata {
@@ -155,6 +172,7 @@ export interface DiagnosticReport {
   browser: BrowserInfo;
   screenshot: string | null;
   errors: ErrorInfo[];
+  rageClicks: RageClick[];
   attachments?: AttachmentMetadata[];
   user: UserContext | null;
   metadata: Record<string, unknown>;
@@ -180,6 +198,7 @@ export interface DiagnosticSnapshot {
   failedRequests: NetworkEntry[];
   consoleErrors: ConsoleEntry[];
   breadcrumbs: Breadcrumb[];
+  rageClicks: RageClick[];
   browser: BrowserInfo;
   currentUrl: string;
 }

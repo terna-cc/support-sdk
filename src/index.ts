@@ -16,6 +16,8 @@ export type {
   BrowserInfo,
   Breadcrumb,
   ErrorInfo,
+  RageClick,
+  RageClickConfig,
   AttachmentMetadata,
   DiagnosticReport,
   ChatConfig,
