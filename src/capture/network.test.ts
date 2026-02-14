@@ -61,14 +61,12 @@ describe('createNetworkCapture', () => {
     });
 
     it('sanitizes URLs', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -198,14 +196,12 @@ describe('createNetworkCapture', () => {
     });
 
     it('records duration', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -221,14 +217,12 @@ describe('createNetworkCapture', () => {
     });
 
     it('excludes SDK own requests', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50) as ReturnType<
@@ -271,14 +265,12 @@ describe('createNetworkCapture', () => {
     });
 
     it('handles fetch with URL object', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -294,14 +286,12 @@ describe('createNetworkCapture', () => {
     });
 
     it('defaults method to GET', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -475,14 +465,12 @@ describe('createNetworkCapture', () => {
 
   describe('buffer operations', () => {
     it('freeze() returns a copy', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
@@ -500,14 +488,12 @@ describe('createNetworkCapture', () => {
     });
 
     it('clear() empties the buffer', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/plain' },
-          }),
-        );
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response('ok', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
       globalThis.fetch = mockFetch;
 
       const capture = createNetworkCapture(sanitizer, 50);
