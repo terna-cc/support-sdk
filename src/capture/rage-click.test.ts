@@ -5,11 +5,7 @@ import {
   type RageClickCapture,
 } from './rage-click';
 
-function clickAt(
-  x: number,
-  y: number,
-  target?: Element,
-): void {
+function clickAt(x: number, y: number, target?: Element): void {
   const event = new MouseEvent('click', {
     clientX: x,
     clientY: y,
