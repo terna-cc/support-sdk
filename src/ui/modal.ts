@@ -68,10 +68,7 @@ function formatTime(timestamp: number): string {
 
 // ─── Category renderers ────────────────────────────────────────────
 
-function renderConsoleLogs(
-  container: HTMLElement,
-  logs: ConsoleEntry[],
-): void {
+function renderConsoleLogs(container: HTMLElement, logs: ConsoleEntry[]): void {
   for (const log of logs) {
     const entry = el('div', 'log-entry');
     const level = el('span', `log-level ${log.level}`);
@@ -82,10 +79,7 @@ function renderConsoleLogs(
   }
 }
 
-function renderNetworkLogs(
-  container: HTMLElement,
-  logs: NetworkEntry[],
-): void {
+function renderNetworkLogs(container: HTMLElement, logs: NetworkEntry[]): void {
   for (const log of logs) {
     const entry = el('div', 'log-entry');
     const statusCode = log.status ?? 0;
@@ -99,10 +93,7 @@ function renderNetworkLogs(
   }
 }
 
-function renderBrowserInfo(
-  container: HTMLElement,
-  info: BrowserInfo,
-): void {
+function renderBrowserInfo(container: HTMLElement, info: BrowserInfo): void {
   const pairs: [string, string][] = [
     ['Browser', info.browser],
     ['OS', info.os],
@@ -162,12 +153,18 @@ function trapFocus(root: HTMLElement): () => void {
     const last = focusable[focusable.length - 1];
 
     if (e.shiftKey) {
-      if (root.shadowRoot?.activeElement === first || document.activeElement === first) {
+      if (
+        root.shadowRoot?.activeElement === first ||
+        document.activeElement === first
+      ) {
         e.preventDefault();
         last.focus();
       }
     } else {
-      if (root.shadowRoot?.activeElement === last || document.activeElement === last) {
+      if (
+        root.shadowRoot?.activeElement === last ||
+        document.activeElement === last
+      ) {
         e.preventDefault();
         first.focus();
       }
@@ -260,20 +257,13 @@ export function createReviewModal(
     return cats;
   }
 
-  function buildReport(
-    data: ModalData,
-    description: string,
-  ): DiagnosticReport {
+  function buildReport(data: ModalData, description: string): DiagnosticReport {
     return {
       description,
       console:
-        checkedState.get('console') && data.consoleLogs
-          ? data.consoleLogs
-          : [],
+        checkedState.get('console') && data.consoleLogs ? data.consoleLogs : [],
       network:
-        checkedState.get('network') && data.networkLogs
-          ? data.networkLogs
-          : [],
+        checkedState.get('network') && data.networkLogs ? data.networkLogs : [],
       breadcrumbs:
         checkedState.get('breadcrumbs') && data.breadcrumbs
           ? data.breadcrumbs
@@ -455,10 +445,7 @@ export function createReviewModal(
         const viewBtn = el('button', 'category-view-btn');
         viewBtn.type = 'button';
         viewBtn.textContent = 'View';
-        viewBtn.setAttribute(
-          'aria-expanded',
-          'false',
-        );
+        viewBtn.setAttribute('aria-expanded', 'false');
         viewBtn.addEventListener('click', () => {
           const isExpanded = detail.classList.contains('expanded');
           if (isExpanded) {
