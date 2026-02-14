@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createConsoleCapture } from './console';
 import { Sanitizer } from '../core/sanitizer';
-import type { ConsoleLevel } from '../types';
 
 describe('createConsoleCapture', () => {
   let sanitizer: Sanitizer;
