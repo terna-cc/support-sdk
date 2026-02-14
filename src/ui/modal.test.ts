@@ -356,9 +356,7 @@ describe('createReviewModal', () => {
     const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
-    const content = getShadow()!.querySelector(
-      '.modal-content',
-    ) as HTMLElement;
+    const content = getShadow()!.querySelector('.modal-content') as HTMLElement;
     content.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
     );
@@ -691,12 +689,19 @@ describe('createReviewModal', () => {
   });
 
   it('supports all position variants', () => {
-    for (const position of ['bottom-right', 'bottom-left', 'top-right', 'top-left'] as const) {
+    for (const position of [
+      'bottom-right',
+      'bottom-left',
+      'top-right',
+      'top-left',
+    ] as const) {
       config.triggerPosition = position;
       const modal = createReviewModal(config, getTranslations('en'), callbacks);
       modal.open({ consoleLogs: makeConsoleLogs(1) });
 
-      const content = getShadow()!.querySelector('.modal-content') as HTMLElement;
+      const content = getShadow()!.querySelector(
+        '.modal-content',
+      ) as HTMLElement;
       expect(content.classList.contains(position)).toBe(true);
 
       modal.close();
