@@ -149,9 +149,7 @@ describe('createToast', () => {
 
     toast.show({ message: 'Error', onAction, onDismiss });
 
-    expect(
-      document.querySelector('[data-support-sdk-toast]'),
-    ).not.toBeNull();
+    expect(document.querySelector('[data-support-sdk-toast]')).not.toBeNull();
 
     toast.destroy();
 
@@ -194,8 +192,7 @@ describe('createToast', () => {
     });
 
     const host = document.querySelector('[data-support-sdk-toast]');
-    const containers =
-      host!.shadowRoot!.querySelectorAll('.toast-container');
+    const containers = host!.shadowRoot!.querySelectorAll('.toast-container');
     expect(containers).toHaveLength(1);
 
     const messageEl = host!.shadowRoot!.querySelector('.toast-message');

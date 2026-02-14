@@ -60,9 +60,7 @@ function stripQueryParams(url: string): string {
   }
 }
 
-export function createBreadcrumbCapture(
-  bufferSize: number,
-): BreadcrumbCapture {
+export function createBreadcrumbCapture(bufferSize: number): BreadcrumbCapture {
   const buffer = new RingBuffer<Breadcrumb>(bufferSize);
   let active = false;
 
@@ -85,9 +83,7 @@ export function createBreadcrumbCapture(
       const text = getTextContent(target);
       const selector = getSelectorPath(target);
 
-      const message = text
-        ? `Clicked <${tag}> "${text}"`
-        : `Clicked <${tag}>`;
+      const message = text ? `Clicked <${tag}> "${text}"` : `Clicked <${tag}>`;
 
       buffer.push({
         type: 'click',
