@@ -83,8 +83,12 @@ export interface NetworkEntry {
 
 export interface BrowserInfo {
   userAgent: string;
+  browser: string;
+  os: string;
   language: string;
   platform: string;
+  timezone: string;
+  online: boolean;
   screenWidth: number;
   screenHeight: number;
   viewportWidth: number;
@@ -92,6 +96,16 @@ export interface BrowserInfo {
   devicePixelRatio: number;
   url: string;
   referrer: string;
+  memory?: {
+    jsHeapSizeLimit: number;
+    totalJSHeapSize: number;
+    usedJSHeapSize: number;
+  };
+  connection?: {
+    effectiveType: string;
+    downlink: number;
+    rtt: number;
+  };
 }
 
 export interface Breadcrumb {
