@@ -112,9 +112,7 @@ describe('createPerformanceCapture', () => {
     it('ignores layout shifts with recent input', () => {
       const capture = createPerformanceCapture();
 
-      triggerObserver('layout-shift', [
-        { hadRecentInput: true, value: 0.3 },
-      ]);
+      triggerObserver('layout-shift', [{ hadRecentInput: true, value: 0.3 }]);
 
       const metrics = capture.getMetrics();
       // CLS stays null because no qualifying shifts were recorded in this batch
@@ -389,12 +387,8 @@ describe('createPerformanceCapture', () => {
     it('accumulates CLS across multiple observer callbacks', () => {
       const capture = createPerformanceCapture();
 
-      triggerObserver('layout-shift', [
-        { hadRecentInput: false, value: 0.1 },
-      ]);
-      triggerObserver('layout-shift', [
-        { hadRecentInput: false, value: 0.05 },
-      ]);
+      triggerObserver('layout-shift', [{ hadRecentInput: false, value: 0.1 }]);
+      triggerObserver('layout-shift', [{ hadRecentInput: false, value: 0.05 }]);
 
       const metrics = capture.getMetrics();
       expect(metrics.cls).toBeCloseTo(0.15);
