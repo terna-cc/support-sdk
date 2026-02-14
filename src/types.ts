@@ -7,6 +7,7 @@ export interface SupportSDKConfig {
   privacy?: PrivacyConfig;
   ui?: UIConfig;
   user?: UserContext;
+  chat?: ChatConfig;
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────
@@ -141,4 +142,36 @@ export interface DiagnosticReport {
   sdk_version: string;
   captured_at: string;
   timestamp: number;
+}
+
+// ─── Chat ───────────────────────────────────────────────────────────
+
+export interface ChatConfig {
+  enabled?: boolean;
+  maxMessages?: number;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface DiagnosticSnapshot {
+  errors: ErrorInfo[];
+  failedRequests: NetworkEntry[];
+  consoleErrors: ConsoleEntry[];
+  breadcrumbs: Breadcrumb[];
+  browser: BrowserInfo;
+  currentUrl: string;
+}
+
+export interface ReportSummary {
+  category: 'bug' | 'feedback' | 'feature_request';
+  title: string;
+  description: string;
+  steps_to_reproduce: string[] | null;
+  expected_behavior: string | null;
+  actual_behavior: string | null;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  tags: string[];
 }

@@ -13,9 +13,15 @@ import {
 } from './capture/breadcrumbs';
 import { createErrorCapture, type ErrorCapture } from './capture/errors';
 import { createTransport, type Transport } from './transport/http';
+import { resolveAuthHeaders } from './transport/http';
 import { createReviewModal, type ReviewModal } from './ui/modal';
 import { createTriggerButton, type TriggerButton } from './ui/trigger';
 import { createToast, type Toast } from './ui/toast';
+import {
+  createChatManager,
+  ChatTransportError,
+  type ChatManager,
+} from './chat/chat-manager';
 import { SDK_VERSION } from './version';
 
 // ─── Defaults ────────────────────────────────────────────────────────
@@ -45,6 +51,7 @@ export class SupportSDK {
   private modal: ReviewModal | null = null;
   private trigger: TriggerButton | null = null;
   private toast: Toast | null = null;
+  private chatMgr: ChatManager | null = null;
 
   private userContext: UserContext | null = null;
   private metadata: Record<string, unknown> = {};
@@ -144,7 +151,7 @@ export class SupportSDK {
       onSubmit: async ({ report, screenshot }) => {
         // Enrich report with SDK-level context
         report.user = this.userContext;
-        report.metadata = { ...this.metadata };
+        report.metadata = { ...this.metadata, ...report.metadata };
         report.sdk_version = SDK_VERSION;
         report.captured_at = new Date().toISOString();
 
@@ -157,6 +164,21 @@ export class SupportSDK {
         this.frozenErrorInfo = null;
       },
     });
+
+    // 4b. Create chat manager if chat is enabled
+    const chatConfig = this.config.chat ?? {};
+    if (chatConfig.enabled !== false) {
+      const auth = this.config.auth ?? { type: 'none' as const };
+      this.chatMgr = createChatManager({
+        endpoint: this.config.endpoint,
+        auth,
+        maxMessages: chatConfig.maxMessages ?? 20,
+      });
+      this.modal.setChatManager(this.chatMgr);
+
+      // Check if the chat endpoint is available (on init, not on every open)
+      void this.checkChatEndpoint();
+    }
 
     // 5. Create toast
     this.toast = createToast({ primaryColor });
@@ -176,6 +198,56 @@ export class SupportSDK {
         onClick: () => this.triggerReport(),
       });
       this.trigger.mount();
+    }
+  }
+
+  private async checkChatEndpoint(): Promise<void> {
+    try {
+      const auth = this.config.auth ?? { type: 'none' as const };
+      const headers = await resolveAuthHeaders(auth);
+      headers.set('Content-Type', 'application/json');
+
+      const url = `${this.config.endpoint.replace(/\/+$/, '')}/chat`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          messages: [],
+          diagnostic_context: null,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 404) {
+        // Chat endpoint not available — fall back to textarea
+        this.modal?.setChatEnabled(false);
+        return;
+      }
+
+      // Chat endpoint is available (any non-404 response means it exists)
+      this.modal?.setChatEnabled(true);
+
+      // Consume the body to prevent connection hanging
+      try {
+        // Cancel the stream since this was just a probe
+        if (response.body) {
+          await response.body.cancel();
+        }
+      } catch {
+        // ignore
+      }
+    } catch (err) {
+      if (err instanceof ChatTransportError && err.status === 404) {
+        this.modal?.setChatEnabled(false);
+        return;
+      }
+      // Network errors or timeouts — fall back to textarea
+      this.modal?.setChatEnabled(false);
     }
   }
 
@@ -287,6 +359,7 @@ export class SupportSDK {
     this.trigger?.unmount();
     this.modal?.destroy();
     this.toast?.destroy();
+    this.chatMgr?.destroy();
 
     // Null out references
     this.consoleCapture = null;
@@ -298,6 +371,7 @@ export class SupportSDK {
     this.modal = null;
     this.trigger = null;
     this.toast = null;
+    this.chatMgr = null;
     this.sanitizer = null;
     this.frozenErrorInfo = null;
 

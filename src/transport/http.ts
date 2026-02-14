@@ -49,7 +49,7 @@ function isServerError(status: number): boolean {
   return status >= 500 && status < 600;
 }
 
-async function resolveAuthHeaders(auth: AuthConfig): Promise<Headers> {
+export async function resolveAuthHeaders(auth: AuthConfig): Promise<Headers> {
   const headers = new Headers();
 
   switch (auth.type) {
