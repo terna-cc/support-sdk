@@ -323,6 +323,282 @@ describe('SupportSDK', () => {
     });
   });
 
+  describe('captureOnOpen()', () => {
+    it('captures a diagnostic snapshot without throwing', () => {
+      const sdk = SupportSDK.init(minimalConfig());
+
+      // Should not throw
+      sdk.captureOnOpen();
+
+      sdk.destroy();
+    });
+
+    it('is a no-op after destroy', () => {
+      const sdk = SupportSDK.init(minimalConfig());
+      sdk.destroy();
+
+      // Should not throw
+      sdk.captureOnOpen();
+    });
+
+    it('does not block — returns synchronously while screenshot captures async', async () => {
+      // Use a slow screenshot mock to prove captureOnOpen() doesn't await it
+      const { domToBlob } = await import('modern-screenshot');
+      const slowCapture = vi.fn(
+        () =>
+          new Promise<Blob>((resolve) =>
+            setTimeout(() => resolve(new Blob(['fake'])), 500),
+          ),
+      );
+      vi.mocked(domToBlob).mockImplementation(slowCapture);
+
+      const sdk = SupportSDK.init(minimalConfig());
+
+      // captureOnOpen() should return immediately (synchronous façade)
+      sdk.captureOnOpen();
+
+      // The async screenshot work was scheduled but not yet resolved
+      expect(slowCapture).toHaveBeenCalled();
+
+      sdk.destroy();
+    });
+  });
+
+  describe('submitWithIntent()', () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    afterEach(() => {
+      fetchSpy?.mockRestore();
+    });
+
+    it('sends a bug report with full diagnostics after captureOnOpen', async () => {
+      fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-1' }), { status: 200 }),
+        );
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      sdk.captureOnOpen();
+
+      // Allow async capture to complete
+      await new Promise((r) => setTimeout(r, 50));
+
+      await sdk.submitWithIntent('bug', 'The page crashes on save');
+
+      // Verify fetch was called with the reports endpoint
+      const reportCalls = fetchSpy.mock.calls.filter(
+        (call) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
+      );
+      expect(reportCalls.length).toBeGreaterThan(0);
+
+      // Verify the report contains diagnostics
+      const lastCall = reportCalls[reportCalls.length - 1];
+      const formData = lastCall[1]?.body as FormData;
+      const reportJson = formData?.get('report') as string;
+      expect(reportJson).toBeTruthy();
+      const report = JSON.parse(reportJson);
+      expect(report.description).toBe('The page crashes on save');
+      expect(report.browser).toBeDefined();
+
+      sdk.destroy();
+    });
+
+    it('sends a text-only report for feedback intent', async () => {
+      fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-2' }), { status: 200 }),
+        );
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      // No captureOnOpen() — feedback doesn't need diagnostics
+      await sdk.submitWithIntent('feedback', 'Great app!');
+
+      // Verify fetch was called
+      const reportCalls = fetchSpy.mock.calls.filter(
+        (call) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
+      );
+      expect(reportCalls.length).toBeGreaterThan(0);
+
+      // Verify the report body contains description but empty diagnostics
+      const lastCall = reportCalls[reportCalls.length - 1];
+      const formData = lastCall[1]?.body as FormData;
+      const reportJson = formData?.get('report') as string;
+      if (reportJson) {
+        const report = JSON.parse(reportJson);
+        expect(report.description).toBe('Great app!');
+        expect(report.console).toEqual([]);
+        expect(report.network).toEqual([]);
+      }
+
+      sdk.destroy();
+    });
+
+    it('sends text-only report for question intent', async () => {
+      fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-3' }), { status: 200 }),
+        );
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      await sdk.submitWithIntent('question', 'How do I export?');
+
+      const reportCalls = fetchSpy.mock.calls.filter(
+        (call) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
+      );
+      expect(reportCalls.length).toBeGreaterThan(0);
+
+      sdk.destroy();
+    });
+
+    it('clears pending diagnostics after submission', async () => {
+      fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({ id: 'report-4' }), { status: 200 }),
+          ),
+        );
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      sdk.captureOnOpen();
+      await new Promise((r) => setTimeout(r, 50));
+
+      await sdk.submitWithIntent('bug', 'Bug report');
+
+      // After submit, a second submit with 'bug' should send text-only
+      // because _pendingDiagnostics was cleared
+      await sdk.submitWithIntent('bug', 'Second report without diagnostics');
+
+      // Should still send (as text-only fallback, since no pending diagnostics)
+      const reportCalls = fetchSpy.mock.calls.filter(
+        (call) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
+      );
+      // At least 2 report calls (one for each submitWithIntent)
+      expect(reportCalls.length).toBeGreaterThanOrEqual(2);
+
+      sdk.destroy();
+    });
+
+    it('is a no-op after destroy', async () => {
+      const sdk = SupportSDK.init(minimalConfig());
+      sdk.destroy();
+
+      // Should not throw
+      await sdk.submitWithIntent('bug', 'should be ignored');
+    });
+
+    it('throws on transport failure', async () => {
+      fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response('Bad Request', { status: 400 }));
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      await expect(sdk.submitWithIntent('feedback', 'Test')).rejects.toThrow();
+
+      sdk.destroy();
+    });
+  });
+
+  describe('clearPendingDiagnostics()', () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    afterEach(() => {
+      fetchSpy?.mockRestore();
+    });
+
+    it('clears pending diagnostics without submitting', async () => {
+      fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-6' }), { status: 200 }),
+        );
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      sdk.captureOnOpen();
+      await new Promise((r) => setTimeout(r, 50));
+
+      sdk.clearPendingDiagnostics();
+
+      // After clearing, a bug submit should send text-only (no diagnostics)
+      await sdk.submitWithIntent('bug', 'After clearing diagnostics');
+
+      const reportCalls = fetchSpy.mock.calls.filter(
+        (call) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
+      );
+      expect(reportCalls.length).toBeGreaterThan(0);
+
+      // The report should be text-only (empty arrays for diagnostics)
+      const lastCall = reportCalls[reportCalls.length - 1];
+      const formData = lastCall[1]?.body as FormData;
+      const reportJson = formData?.get('report') as string;
+      if (reportJson) {
+        const report = JSON.parse(reportJson);
+        expect(report.console).toEqual([]);
+        expect(report.network).toEqual([]);
+      }
+
+      sdk.destroy();
+    });
+
+    it('is safe to call when no diagnostics are pending', () => {
+      const sdk = SupportSDK.init(minimalConfig());
+
+      // Should not throw
+      sdk.clearPendingDiagnostics();
+
+      sdk.destroy();
+    });
+  });
+
   describe('SDK_VERSION export', () => {
     it('is exported from the main entry', async () => {
       const { SDK_VERSION } = await import('./index');

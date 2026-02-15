@@ -1,4 +1,10 @@
-import type { SupportSDKConfig, UserContext, ErrorInfo } from './types';
+import type {
+  SupportSDKConfig,
+  UserContext,
+  ErrorInfo,
+  PendingDiagnostics,
+  ReportIntent,
+} from './types';
 import {
   createAttachmentManager,
   type AttachmentManager,
@@ -77,6 +83,9 @@ export class SupportSDK {
 
   // Frozen data from error auto-capture
   private frozenErrorInfo: ErrorInfo | null = null;
+
+  // Pending diagnostics from captureOnOpen()
+  private _pendingDiagnostics: PendingDiagnostics | null = null;
 
   private constructor(config: SupportSDKConfig) {
     this.config = config;
@@ -425,6 +434,126 @@ export class SupportSDK {
     this.metadata = metadata;
   }
 
+  /**
+   * Capture a diagnostic snapshot when the widget/chat opens.
+   * Screenshot capture runs in the background (non-blocking).
+   * Ring buffers are frozen immediately to preserve current state.
+   */
+  captureOnOpen(): void {
+    if (this.destroyed) return;
+    void this.doCaptureOnOpen();
+  }
+
+  private async doCaptureOnOpen(): Promise<void> {
+    // Start screenshot capture in background (non-blocking)
+    const screenshotPromise = this.screenshotCapture
+      ? this.screenshotCapture.capture()
+      : Promise.resolve(null);
+
+    // Capture timestamp as close to widget open as possible
+    const timestamp = Date.now();
+
+    // Freeze ring buffers immediately to preserve current state
+    const consoleLogs = this.consoleCapture?.freeze() ?? [];
+    const networkLogs = this.networkCapture?.freeze() ?? [];
+    const breadcrumbs = this.breadcrumbCapture?.freeze() ?? [];
+    const rageClicks = this.rageClickCapture?.getDetected() ?? [];
+    const browser = collectBrowserInfo();
+    const performance = this.performanceCapture?.getMetrics() ?? null;
+    const errors: ErrorInfo[] = this.frozenErrorInfo
+      ? [this.frozenErrorInfo]
+      : [];
+
+    // Wait for screenshot (non-blocking to the caller since we're in async)
+    const screenshot = await screenshotPromise;
+
+    // Guard against SDK being destroyed while awaiting screenshot
+    if (this.destroyed) return;
+
+    this._pendingDiagnostics = {
+      console: consoleLogs,
+      network: networkLogs,
+      breadcrumbs,
+      browser,
+      rageClicks,
+      performance,
+      errors,
+      timestamp,
+      screenshot,
+    };
+  }
+
+  /**
+   * Submit a report based on conversation intent.
+   * For 'bug' intent, attaches full diagnostics captured at open time.
+   * For 'feedback'/'question', sends text-only report.
+   */
+  async submitWithIntent(intent: ReportIntent, summary: string): Promise<void> {
+    if (this.destroyed || !this.transport) return;
+
+    try {
+      if (intent === 'bug' && this._pendingDiagnostics) {
+        const diag = this._pendingDiagnostics;
+        const report = {
+          description: summary,
+          console: diag.console,
+          network: diag.network,
+          breadcrumbs: diag.breadcrumbs,
+          browser: diag.browser,
+          screenshot: null as string | null,
+          errors: diag.errors,
+          rageClicks: diag.rageClicks,
+          performance: diag.performance,
+          user: this.userContext,
+          metadata: { ...this.metadata },
+          sdk_version: SDK_VERSION,
+          captured_at: new Date().toISOString(),
+          timestamp: diag.timestamp,
+        };
+
+        const result = await this.transport.sendReport(
+          report,
+          diag.screenshot ?? undefined,
+        );
+        if (!result.success) {
+          throw new Error(result.error?.message ?? 'Failed to send report');
+        }
+      } else {
+        // Feedback/question — text only
+        const report = {
+          description: summary,
+          console: [],
+          network: [],
+          breadcrumbs: [],
+          browser: collectBrowserInfo(),
+          screenshot: null as string | null,
+          errors: [],
+          rageClicks: [],
+          performance: null,
+          user: this.userContext,
+          metadata: { ...this.metadata },
+          sdk_version: SDK_VERSION,
+          captured_at: new Date().toISOString(),
+          timestamp: Date.now(),
+        };
+
+        const result = await this.transport.sendReport(report);
+        if (!result.success) {
+          throw new Error(result.error?.message ?? 'Failed to send report');
+        }
+      }
+    } finally {
+      this._pendingDiagnostics = null;
+    }
+  }
+
+  /**
+   * Clear pending diagnostics without submitting (prevent memory leaks).
+   */
+  clearPendingDiagnostics(): void {
+    this._pendingDiagnostics = null;
+  }
+
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -460,6 +589,7 @@ export class SupportSDK {
     this.attachmentMgr = null;
     this.sanitizer = null;
     this.frozenErrorInfo = null;
+    this._pendingDiagnostics = null;
 
     // Clear singleton
     instance = null;
