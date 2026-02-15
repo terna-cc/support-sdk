@@ -359,14 +359,18 @@ describe('SupportSDK', () => {
     it('sends a bug report with full diagnostics after captureOnOpen', async () => {
       // Mock fetch globally before any SDK initialization
       const originalFetchFn = globalThis.fetch;
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ id: 'report-1' }), { status: 200 }),
-      );
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-1' }), { status: 200 }),
+        );
 
-      const sdk = SupportSDK.init(minimalConfig({
-        capture: { network: false },
-        chat: { enabled: false },
-      }));
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
 
       sdk.captureOnOpen();
 
@@ -378,7 +382,9 @@ describe('SupportSDK', () => {
       // Verify fetch was called with the reports endpoint
       const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
       const reportCalls = mockFetch.mock.calls.filter(
-        (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('/reports'),
+        (call: unknown[]) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
       );
       expect(reportCalls.length).toBeGreaterThan(0);
 
@@ -397,14 +403,18 @@ describe('SupportSDK', () => {
 
     it('sends a text-only report for feedback intent', async () => {
       const originalFetchFn = globalThis.fetch;
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ id: 'report-2' }), { status: 200 }),
-      );
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-2' }), { status: 200 }),
+        );
 
-      const sdk = SupportSDK.init(minimalConfig({
-        capture: { network: false },
-        chat: { enabled: false },
-      }));
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
 
       // No captureOnOpen() — feedback doesn't need diagnostics
       await sdk.submitWithIntent('feedback', 'Great app!');
@@ -412,7 +422,9 @@ describe('SupportSDK', () => {
       // Verify fetch was called
       const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
       const reportCalls = mockFetch.mock.calls.filter(
-        (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('/reports'),
+        (call: unknown[]) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
       );
       expect(reportCalls.length).toBeGreaterThan(0);
 
@@ -433,20 +445,26 @@ describe('SupportSDK', () => {
 
     it('sends text-only report for question intent', async () => {
       const originalFetchFn = globalThis.fetch;
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ id: 'report-3' }), { status: 200 }),
-      );
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-3' }), { status: 200 }),
+        );
 
-      const sdk = SupportSDK.init(minimalConfig({
-        capture: { network: false },
-        chat: { enabled: false },
-      }));
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
 
       await sdk.submitWithIntent('question', 'How do I export?');
 
       const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
       const reportCalls = mockFetch.mock.calls.filter(
-        (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('/reports'),
+        (call: unknown[]) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
       );
       expect(reportCalls.length).toBeGreaterThan(0);
 
@@ -456,14 +474,20 @@ describe('SupportSDK', () => {
 
     it('clears pending diagnostics after submission', async () => {
       const originalFetchFn = globalThis.fetch;
-      globalThis.fetch = vi.fn().mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ id: 'report-4' }), { status: 200 })),
-      );
+      globalThis.fetch = vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({ id: 'report-4' }), { status: 200 }),
+          ),
+        );
 
-      const sdk = SupportSDK.init(minimalConfig({
-        capture: { network: false },
-        chat: { enabled: false },
-      }));
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
 
       sdk.captureOnOpen();
       await new Promise((r) => setTimeout(r, 50));
@@ -477,7 +501,9 @@ describe('SupportSDK', () => {
       // Should still send (as text-only fallback, since no pending diagnostics)
       const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
       const reportCalls = mockFetch.mock.calls.filter(
-        (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('/reports'),
+        (call: unknown[]) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
       );
       // At least 2 report calls (one for each submitWithIntent)
       expect(reportCalls.length).toBeGreaterThanOrEqual(2);
@@ -496,18 +522,18 @@ describe('SupportSDK', () => {
 
     it('throws on transport failure', async () => {
       const originalFetchFn = globalThis.fetch;
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response('Bad Request', { status: 400 }),
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(new Response('Bad Request', { status: 400 }));
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
       );
 
-      const sdk = SupportSDK.init(minimalConfig({
-        capture: { network: false },
-        chat: { enabled: false },
-      }));
-
-      await expect(
-        sdk.submitWithIntent('feedback', 'Test'),
-      ).rejects.toThrow();
+      await expect(sdk.submitWithIntent('feedback', 'Test')).rejects.toThrow();
 
       sdk.destroy();
       globalThis.fetch = originalFetchFn;
@@ -517,14 +543,18 @@ describe('SupportSDK', () => {
   describe('clearPendingDiagnostics()', () => {
     it('clears pending diagnostics without submitting', async () => {
       const originalFetchFn = globalThis.fetch;
-      globalThis.fetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ id: 'report-6' }), { status: 200 }),
-      );
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: 'report-6' }), { status: 200 }),
+        );
 
-      const sdk = SupportSDK.init(minimalConfig({
-        capture: { network: false },
-        chat: { enabled: false },
-      }));
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
 
       sdk.captureOnOpen();
       await new Promise((r) => setTimeout(r, 50));
@@ -536,7 +566,9 @@ describe('SupportSDK', () => {
 
       const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
       const reportCalls = mockFetch.mock.calls.filter(
-        (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('/reports'),
+        (call: unknown[]) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
       );
       expect(reportCalls.length).toBeGreaterThan(0);
 
