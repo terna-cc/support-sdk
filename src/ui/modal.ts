@@ -9,6 +9,7 @@ import type {
   DiagnosticReport,
   DiagnosticSnapshot,
   AttachmentMetadata,
+  PerformanceMetrics,
 } from '../types';
 import type { ChatManager } from '../chat/chat-manager';
 import type { AttachmentManager, Attachment } from '../chat/attachment-manager';
@@ -24,6 +25,7 @@ export interface ModalData {
   browserInfo?: BrowserInfo;
   breadcrumbs?: Breadcrumb[];
   errorInfo?: ErrorInfo;
+  performanceMetrics?: PerformanceMetrics | null;
 }
 
 export interface ModalCallbacks {
@@ -299,6 +301,7 @@ export function createReviewModal(
             },
       screenshot: null, // Blob is sent separately
       errors: data.errorInfo ? [data.errorInfo] : [],
+      performance: data.performanceMetrics ?? null,
       user: null,
       metadata: {},
       sdk_version: '',
@@ -345,6 +348,7 @@ export function createReviewModal(
         referrer: '',
       },
       currentUrl: data.browserInfo?.url ?? window.location.href,
+      performance: data.performanceMetrics ?? null,
     };
   }
 

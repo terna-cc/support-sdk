@@ -16,6 +16,10 @@ import {
   type BreadcrumbCapture,
 } from './capture/breadcrumbs';
 import { createErrorCapture, type ErrorCapture } from './capture/errors';
+import {
+  createPerformanceCapture,
+  type PerformanceCapture,
+} from './capture/performance';
 import { createTransport, type Transport } from './transport/http';
 import { resolveAuthHeaders } from './transport/http';
 import { createReviewModal, type ReviewModal } from './ui/modal';
@@ -52,6 +56,7 @@ export class SupportSDK {
   private breadcrumbCapture: BreadcrumbCapture | null = null;
   private screenshotCapture: ScreenshotCapture | null = null;
   private errorCapture: ErrorCapture | null = null;
+  private performanceCapture: PerformanceCapture | null = null;
   private transport: Transport | null = null;
   private modal: ReviewModal | null = null;
   private trigger: TriggerButton | null = null;
@@ -150,6 +155,15 @@ export class SupportSDK {
     // Screenshot capture
     if (captureConfig.screenshot !== false) {
       this.screenshotCapture = createScreenshotCapture();
+    }
+
+    // Performance capture
+    if (captureConfig.performance !== false) {
+      const perfConfig =
+        typeof captureConfig.performance === 'object'
+          ? captureConfig.performance
+          : undefined;
+      this.performanceCapture = createPerformanceCapture(perfConfig);
     }
 
     // 3. Create transport
@@ -303,6 +317,9 @@ export class SupportSDK {
     // Collect browser info
     const browserInfo = collectBrowserInfo();
 
+    // Collect performance metrics
+    const performanceMetrics = this.performanceCapture?.getMetrics() ?? null;
+
     // Show toast
     this.toast?.show({
       message: `Error detected: ${errorInfo.message}`,
@@ -315,6 +332,7 @@ export class SupportSDK {
           browserInfo,
           breadcrumbs,
           errorInfo: this.frozenErrorInfo ?? undefined,
+          performanceMetrics,
         });
       },
       onDismiss: () => {
@@ -346,7 +364,10 @@ export class SupportSDK {
     // 3. Collect browser info
     const browserInfo = collectBrowserInfo();
 
-    // 4. Open review modal
+    // 4. Collect performance metrics
+    const performanceMetrics = this.performanceCapture?.getMetrics() ?? null;
+
+    // 5. Open review modal
     this.modal?.open({
       screenshot: screenshot ?? undefined,
       consoleLogs,
@@ -354,6 +375,7 @@ export class SupportSDK {
       browserInfo,
       breadcrumbs,
       errorInfo: this.frozenErrorInfo ?? undefined,
+      performanceMetrics,
     });
 
     void options;
@@ -387,6 +409,7 @@ export class SupportSDK {
     this.networkCapture?.stop();
     this.breadcrumbCapture?.stop();
     this.errorCapture?.stop();
+    this.performanceCapture?.destroy();
 
     // Remove UI
     this.trigger?.unmount();
@@ -401,6 +424,7 @@ export class SupportSDK {
     this.breadcrumbCapture = null;
     this.screenshotCapture = null;
     this.errorCapture = null;
+    this.performanceCapture = null;
     this.transport = null;
     this.modal = null;
     this.trigger = null;
