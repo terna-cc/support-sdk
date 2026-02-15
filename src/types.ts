@@ -272,3 +272,19 @@ export interface ReportSummary {
   severity: 'low' | 'medium' | 'high' | 'critical';
   tags: string[];
 }
+
+// ─── Auto-capture on open ────────────────────────────────────────────
+
+export type ReportIntent = 'bug' | 'feedback' | 'question';
+
+export interface PendingDiagnostics {
+  console: ConsoleEntry[];
+  network: NetworkEntry[];
+  breadcrumbs: Breadcrumb[];
+  browser: BrowserInfo;
+  rageClicks: RageClick[];
+  performance: PerformanceMetrics | null;
+  errors: ErrorInfo[];
+  timestamp: number;
+  screenshot: Blob | null;
+}

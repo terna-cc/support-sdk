@@ -29,6 +29,8 @@ export type {
   ChatMessage,
   DiagnosticSnapshot,
   ReportSummary,
+  ReportIntent,
+  PendingDiagnostics,
 } from './types';
 
 export { buildThemeVars } from './ui/styles';
