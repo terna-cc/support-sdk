@@ -9,6 +9,7 @@ export type {
   BufferConfig,
   PerformanceCaptureConfig,
   PrivacyConfig,
+  ThemeConfig,
   UIConfig,
   UserContext,
   ConsoleLevel,
@@ -28,6 +29,7 @@ export type {
   ReportSummary,
 } from './types';
 
+export { buildThemeVars } from './ui/styles';
 export { RingBuffer } from './core/ring-buffer';
 export { Sanitizer } from './core/sanitizer';
 export type { SanitizerConfig } from './core/sanitizer';

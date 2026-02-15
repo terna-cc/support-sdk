@@ -104,7 +104,8 @@ export class SupportSDK {
     const captureConfig = this.config.capture ?? {};
     const privacyConfig = this.config.privacy ?? {};
     const uiConfig = this.config.ui ?? {};
-    const primaryColor = DEFAULT_PRIMARY_COLOR;
+    const themeConfig = this.config.theme;
+    const primaryColor = themeConfig?.primaryColor ?? DEFAULT_PRIMARY_COLOR;
 
     // 1. Create sanitizer
     this.sanitizer = new Sanitizer({
@@ -173,33 +174,38 @@ export class SupportSDK {
     });
 
     // 4. Create review modal
-    this.modal = createReviewModal(uiConfig, this.translations, {
-      onSubmit: async ({ report, screenshot, attachments }) => {
-        // Enrich report with SDK-level context
-        report.user = this.userContext;
-        report.metadata = { ...this.metadata, ...report.metadata };
-        report.sdk_version = SDK_VERSION;
-        report.captured_at = new Date().toISOString();
+    this.modal = createReviewModal(
+      uiConfig,
+      this.translations,
+      {
+        onSubmit: async ({ report, screenshot, attachments }) => {
+          // Enrich report with SDK-level context
+          report.user = this.userContext;
+          report.metadata = { ...this.metadata, ...report.metadata };
+          report.sdk_version = SDK_VERSION;
+          report.captured_at = new Date().toISOString();
 
-        const result = await this.transport!.sendReport(
-          report,
-          screenshot,
-          attachments,
-        );
-        if (!result.success) {
-          throw new Error(result.error?.message ?? 'Failed to send report');
-        }
+          const result = await this.transport!.sendReport(
+            report,
+            screenshot,
+            attachments,
+          );
+          if (!result.success) {
+            throw new Error(result.error?.message ?? 'Failed to send report');
+          }
+        },
+        onCancel: () => {
+          this.frozenErrorInfo = null;
+        },
+        onOpen: () => {
+          this.trigger?.hide();
+        },
+        onClose: () => {
+          this.trigger?.show();
+        },
       },
-      onCancel: () => {
-        this.frozenErrorInfo = null;
-      },
-      onOpen: () => {
-        this.trigger?.hide();
-      },
-      onClose: () => {
-        this.trigger?.show();
-      },
-    });
+      themeConfig,
+    );
 
     // 4a. Create attachment manager if attachments are enabled
     const attachmentConfig =
@@ -228,7 +234,7 @@ export class SupportSDK {
     }
 
     // 5. Create toast
-    this.toast = createToast({ primaryColor });
+    this.toast = createToast({ primaryColor, theme: themeConfig });
 
     // 6. Create error capture
     this.errorCapture = createErrorCapture();
@@ -242,6 +248,7 @@ export class SupportSDK {
         position: uiConfig.triggerPosition ?? 'bottom-right',
         label: uiConfig.triggerLabel ?? this.translations.triggerLabel,
         primaryColor,
+        theme: themeConfig,
         onClick: () => this.triggerReport(),
       });
       this.trigger.mount();

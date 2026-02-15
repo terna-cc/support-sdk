@@ -6,6 +6,7 @@ export interface SupportSDKConfig {
   capture?: CaptureConfig;
   privacy?: PrivacyConfig;
   ui?: UIConfig;
+  theme?: ThemeConfig;
   user?: UserContext;
   chat?: ChatConfig;
   locale?: string;
@@ -57,6 +58,32 @@ export interface PrivacyConfig {
   sensitiveParams?: string[];
   maxBodySize?: number;
   stripBodies?: boolean;
+}
+
+// ─── Theme ───────────────────────────────────────────────────────────
+
+export interface ThemeConfig {
+  // Colors
+  primaryColor?: string;
+  primaryTextColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  subtextColor?: string;
+  assistantBubbleColor?: string;
+  borderColor?: string;
+
+  // Typography
+  fontFamily?: string;
+  fontSize?: string;
+
+  // Trigger button
+  triggerIcon?: string;
+  triggerSize?: string;
+  borderRadius?: string;
+
+  // Panel
+  panelWidth?: string;
+  panelMaxHeight?: string;
 }
 
 // ─── UI ──────────────────────────────────────────────────────────────

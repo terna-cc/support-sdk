@@ -1,6 +1,7 @@
-import { modalStyles } from './styles';
+import { modalStyles, buildThemeVars } from './styles';
 import type {
   UIConfig,
+  ThemeConfig,
   ConsoleEntry,
   NetworkEntry,
   BrowserInfo,
@@ -195,6 +196,7 @@ export function createReviewModal(
   config: UIConfig,
   translations: Translations,
   callbacks: ModalCallbacks,
+  theme?: ThemeConfig,
 ): ReviewModal {
   let host: HTMLDivElement | null = null;
   let shadow: ShadowRoot | null = null;
@@ -500,9 +502,9 @@ export function createReviewModal(
     host.setAttribute('data-support-modal', '');
     shadow = host.attachShadow({ mode: 'open' });
 
-    // Styles
+    // Styles (theme vars + modal styles)
     const style = document.createElement('style');
-    style.textContent = modalStyles;
+    style.textContent = buildThemeVars(theme) + modalStyles;
     shadow.appendChild(style);
 
     // Position class based on triggerPosition config
