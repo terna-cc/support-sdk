@@ -450,6 +450,9 @@ export class SupportSDK {
       ? this.screenshotCapture.capture()
       : Promise.resolve(null);
 
+    // Capture timestamp as close to widget open as possible
+    const timestamp = Date.now();
+
     // Freeze ring buffers immediately to preserve current state
     const consoleLogs = this.consoleCapture?.freeze() ?? [];
     const networkLogs = this.networkCapture?.freeze() ?? [];
@@ -464,6 +467,9 @@ export class SupportSDK {
     // Wait for screenshot (non-blocking to the caller since we're in async)
     const screenshot = await screenshotPromise;
 
+    // Guard against SDK being destroyed while awaiting screenshot
+    if (this.destroyed) return;
+
     this._pendingDiagnostics = {
       console: consoleLogs,
       network: networkLogs,
@@ -472,7 +478,7 @@ export class SupportSDK {
       rageClicks,
       performance,
       errors,
-      timestamp: Date.now(),
+      timestamp,
       screenshot,
     };
   }
