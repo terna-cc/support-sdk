@@ -6,6 +6,7 @@ export interface SupportSDKConfig {
   capture?: CaptureConfig;
   privacy?: PrivacyConfig;
   ui?: UIConfig;
+  theme?: ThemeConfig;
   user?: UserContext;
   chat?: ChatConfig;
   locale?: string;
@@ -36,6 +37,11 @@ export interface RageClickConfig {
   maxItems?: number;
 }
 
+export interface PerformanceCaptureConfig {
+  longTaskThreshold?: number;
+  maxLongTasks?: number;
+}
+
 export interface CaptureConfig {
   console?: false | (BufferConfig & { levels?: ConsoleLevel[] });
   network?: false | (BufferConfig & { urlFilter?: (url: string) => boolean });
@@ -43,6 +49,7 @@ export interface CaptureConfig {
   screenshot?: boolean;
   attachments?: AttachmentConfig;
   rageClicks?: false | RageClickConfig;
+  performance?: boolean | PerformanceCaptureConfig;
 }
 
 export interface BufferConfig {
@@ -59,6 +66,32 @@ export interface PrivacyConfig {
   sensitiveParams?: string[];
   maxBodySize?: number;
   stripBodies?: boolean;
+}
+
+// ─── Theme ───────────────────────────────────────────────────────────
+
+export interface ThemeConfig {
+  // Colors
+  primaryColor?: string;
+  primaryTextColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  subtextColor?: string;
+  assistantBubbleColor?: string;
+  borderColor?: string;
+
+  // Typography
+  fontFamily?: string;
+  fontSize?: string;
+
+  // Trigger button
+  triggerIcon?: string;
+  triggerSize?: string;
+  borderRadius?: string;
+
+  // Panel
+  panelWidth?: string;
+  panelMaxHeight?: string;
 }
 
 // ─── UI ──────────────────────────────────────────────────────────────
@@ -161,6 +194,30 @@ export interface AttachmentMetadata {
   type: string;
 }
 
+// ─── Performance Metrics ─────────────────────────────────────────────
+
+export interface PerformanceMetrics {
+  lcp: number | null;
+  fid: number | null;
+  cls: number | null;
+  inp: number | null;
+  ttfb: number | null;
+  longTasks: LongTaskEntry[];
+  memory: MemoryInfo | null;
+}
+
+export interface LongTaskEntry {
+  duration: number;
+  startTime: number;
+  timestamp: number;
+}
+
+export interface MemoryInfo {
+  jsHeapSizeLimit: number;
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+}
+
 // ─── Diagnostic Report (the full payload) ────────────────────────────
 
 export interface DiagnosticReport {
@@ -173,6 +230,7 @@ export interface DiagnosticReport {
   screenshot: string | null;
   errors: ErrorInfo[];
   rageClicks: RageClick[];
+  performance: PerformanceMetrics | null;
   attachments?: AttachmentMetadata[];
   user: UserContext | null;
   metadata: Record<string, unknown>;
@@ -201,6 +259,7 @@ export interface DiagnosticSnapshot {
   rageClicks: RageClick[];
   browser: BrowserInfo;
   currentUrl: string;
+  performance: PerformanceMetrics | null;
 }
 
 export interface ReportSummary {

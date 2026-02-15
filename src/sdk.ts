@@ -20,6 +20,10 @@ import {
   createRageClickCapture,
   type RageClickCapture,
 } from './capture/rage-click';
+import {
+  createPerformanceCapture,
+  type PerformanceCapture,
+} from './capture/performance';
 import { createTransport, type Transport } from './transport/http';
 import { resolveAuthHeaders } from './transport/http';
 import { createReviewModal, type ReviewModal } from './ui/modal';
@@ -57,6 +61,7 @@ export class SupportSDK {
   private screenshotCapture: ScreenshotCapture | null = null;
   private errorCapture: ErrorCapture | null = null;
   private rageClickCapture: RageClickCapture | null = null;
+  private performanceCapture: PerformanceCapture | null = null;
   private transport: Transport | null = null;
   private modal: ReviewModal | null = null;
   private trigger: TriggerButton | null = null;
@@ -104,7 +109,8 @@ export class SupportSDK {
     const captureConfig = this.config.capture ?? {};
     const privacyConfig = this.config.privacy ?? {};
     const uiConfig = this.config.ui ?? {};
-    const primaryColor = DEFAULT_PRIMARY_COLOR;
+    const themeConfig = this.config.theme;
+    const primaryColor = themeConfig?.primaryColor ?? DEFAULT_PRIMARY_COLOR;
 
     // 1. Create sanitizer
     this.sanitizer = new Sanitizer({
@@ -166,6 +172,15 @@ export class SupportSDK {
       this.rageClickCapture = createRageClickCapture(opts);
     }
 
+    // Performance capture
+    if (captureConfig.performance !== false) {
+      const perfConfig =
+        typeof captureConfig.performance === 'object'
+          ? captureConfig.performance
+          : undefined;
+      this.performanceCapture = createPerformanceCapture(perfConfig);
+    }
+
     // 3. Create transport
     this.transport = createTransport({
       endpoint: this.config.endpoint,
@@ -173,33 +188,38 @@ export class SupportSDK {
     });
 
     // 4. Create review modal
-    this.modal = createReviewModal(uiConfig, this.translations, {
-      onSubmit: async ({ report, screenshot, attachments }) => {
-        // Enrich report with SDK-level context
-        report.user = this.userContext;
-        report.metadata = { ...this.metadata, ...report.metadata };
-        report.sdk_version = SDK_VERSION;
-        report.captured_at = new Date().toISOString();
+    this.modal = createReviewModal(
+      uiConfig,
+      this.translations,
+      {
+        onSubmit: async ({ report, screenshot, attachments }) => {
+          // Enrich report with SDK-level context
+          report.user = this.userContext;
+          report.metadata = { ...this.metadata, ...report.metadata };
+          report.sdk_version = SDK_VERSION;
+          report.captured_at = new Date().toISOString();
 
-        const result = await this.transport!.sendReport(
-          report,
-          screenshot,
-          attachments,
-        );
-        if (!result.success) {
-          throw new Error(result.error?.message ?? 'Failed to send report');
-        }
+          const result = await this.transport!.sendReport(
+            report,
+            screenshot,
+            attachments,
+          );
+          if (!result.success) {
+            throw new Error(result.error?.message ?? 'Failed to send report');
+          }
+        },
+        onCancel: () => {
+          this.frozenErrorInfo = null;
+        },
+        onOpen: () => {
+          this.trigger?.hide();
+        },
+        onClose: () => {
+          this.trigger?.show();
+        },
       },
-      onCancel: () => {
-        this.frozenErrorInfo = null;
-      },
-      onOpen: () => {
-        this.trigger?.hide();
-      },
-      onClose: () => {
-        this.trigger?.show();
-      },
-    });
+      themeConfig,
+    );
 
     // 4a. Create attachment manager if attachments are enabled
     const attachmentConfig =
@@ -228,7 +248,7 @@ export class SupportSDK {
     }
 
     // 5. Create toast
-    this.toast = createToast({ primaryColor });
+    this.toast = createToast({ primaryColor, theme: themeConfig });
 
     // 6. Create error capture
     this.errorCapture = createErrorCapture();
@@ -242,6 +262,7 @@ export class SupportSDK {
         position: uiConfig.triggerPosition ?? 'bottom-right',
         label: uiConfig.triggerLabel ?? this.translations.triggerLabel,
         primaryColor,
+        theme: themeConfig,
         onClick: () => this.triggerReport(),
       });
       this.trigger.mount();
@@ -318,6 +339,9 @@ export class SupportSDK {
     // Collect browser info
     const browserInfo = collectBrowserInfo();
 
+    // Collect performance metrics
+    const performanceMetrics = this.performanceCapture?.getMetrics() ?? null;
+
     // Show toast
     this.toast?.show({
       message: `Error detected: ${errorInfo.message}`,
@@ -331,6 +355,7 @@ export class SupportSDK {
           breadcrumbs,
           rageClicks,
           errorInfo: this.frozenErrorInfo ?? undefined,
+          performanceMetrics,
         });
       },
       onDismiss: () => {
@@ -363,7 +388,10 @@ export class SupportSDK {
     // 3. Collect browser info
     const browserInfo = collectBrowserInfo();
 
-    // 4. Open review modal
+    // 4. Collect performance metrics
+    const performanceMetrics = this.performanceCapture?.getMetrics() ?? null;
+
+    // 5. Open review modal
     this.modal?.open({
       screenshot: screenshot ?? undefined,
       consoleLogs,
@@ -372,6 +400,7 @@ export class SupportSDK {
       breadcrumbs,
       rageClicks,
       errorInfo: this.frozenErrorInfo ?? undefined,
+      performanceMetrics,
     });
 
     void options;
@@ -406,6 +435,7 @@ export class SupportSDK {
     this.breadcrumbCapture?.stop();
     this.errorCapture?.stop();
     this.rageClickCapture?.destroy();
+    this.performanceCapture?.destroy();
 
     // Remove UI
     this.trigger?.unmount();
@@ -421,6 +451,7 @@ export class SupportSDK {
     this.screenshotCapture = null;
     this.errorCapture = null;
     this.rageClickCapture = null;
+    this.performanceCapture = null;
     this.transport = null;
     this.modal = null;
     this.trigger = null;

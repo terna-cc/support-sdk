@@ -134,16 +134,68 @@ describe('createTriggerButton', () => {
     expect(style!.textContent).toContain('.trigger-btn');
   });
 
-  it('applies custom primary color via CSS custom property', () => {
-    const config = { ...defaultConfig, primaryColor: '#ff0000' };
+  it('applies custom primary color via theme config in CSS', () => {
+    const config = {
+      ...defaultConfig,
+      theme: { primaryColor: '#ff0000' },
+    };
     const trigger = createTriggerButton(config);
     trigger.mount();
 
-    const host = document.querySelector(
-      '[data-support-trigger]',
-    ) as HTMLElement;
-    expect(host.style.getPropertyValue('--support-primary-color')).toBe(
-      '#ff0000',
-    );
+    const host = document.querySelector('[data-support-trigger]');
+    const style = host!.shadowRoot!.querySelector('style');
+    expect(style!.textContent).toContain('--support-primary-color: #ff0000');
+  });
+
+  it('renders default SVG icon when no triggerIcon is provided', () => {
+    const trigger = createTriggerButton(defaultConfig);
+    trigger.mount();
+
+    const host = document.querySelector('[data-support-trigger]');
+    const svg = host!.shadowRoot!.querySelector('svg');
+    expect(svg).not.toBeNull();
+    // No <img> element should exist
+    const img = host!.shadowRoot!.querySelector('img');
+    expect(img).toBeNull();
+  });
+
+  it('renders custom icon image when triggerIcon is provided in theme', () => {
+    const config = {
+      ...defaultConfig,
+      theme: { triggerIcon: 'https://example.com/icon.svg' },
+    };
+    const trigger = createTriggerButton(config);
+    trigger.mount();
+
+    const host = document.querySelector('[data-support-trigger]');
+    const img = host!.shadowRoot!.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img!.src).toBe('https://example.com/icon.svg');
+    expect(img!.alt).toBe('Support');
+
+    // Default SVG icon should not be present
+    const svgInSpan = host!.shadowRoot!.querySelector('.trigger-icon svg');
+    expect(svgInSpan).toBeNull();
+  });
+
+  it('includes theme CSS vars in styles when theme is provided', () => {
+    const config = {
+      ...defaultConfig,
+      theme: {
+        primaryColor: '#e11d48',
+        fontFamily: '"Inter", sans-serif',
+        triggerSize: '56px',
+      },
+    };
+    const trigger = createTriggerButton(config);
+    trigger.mount();
+
+    const host = document.querySelector('[data-support-trigger]');
+    const style = host!.shadowRoot!.querySelector('style');
+    const css = style!.textContent!;
+
+    expect(css).toContain('--support-primary-color: #e11d48');
+    expect(css).toContain('--support-font: "Inter", sans-serif');
+    expect(css).toContain('--support-trigger-size: 56px');
   });
 });

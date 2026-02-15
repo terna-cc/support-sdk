@@ -1,3 +1,50 @@
+import type { ThemeConfig } from '../types';
+
+// ─── Theme CSS custom properties builder ─────────────────────────────
+
+export function buildThemeVars(theme?: ThemeConfig): string {
+  const t = theme ?? {};
+  return `
+    :host {
+      --support-primary-color: ${t.primaryColor ?? '#2563eb'};
+      --support-primary-text: ${t.primaryTextColor ?? '#ffffff'};
+      --support-primary-hover: ${t.primaryColor ? darkenColor(t.primaryColor) : '#1d4ed8'};
+      --support-bg: ${t.backgroundColor ?? '#ffffff'};
+      --support-bg-secondary: #f8fafc;
+      --support-text: ${t.textColor ?? '#1e293b'};
+      --support-text-secondary: ${t.subtextColor ?? '#64748b'};
+      --support-assistant-bubble: ${t.assistantBubbleColor ?? '#f3f4f6'};
+      --support-border: ${t.borderColor ?? '#e2e8f0'};
+      --support-error: #dc2626;
+      --support-success: #16a34a;
+      --support-radius: ${t.borderRadius ?? '8px'};
+      --support-font: ${t.fontFamily ?? "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif"};
+      --support-font-size: ${t.fontSize ?? '14px'};
+      --support-trigger-size: ${t.triggerSize ?? '48px'};
+      --support-panel-width: ${t.panelWidth ?? '380px'};
+      --support-panel-max-height: ${t.panelMaxHeight ?? '520px'};
+    }
+  `;
+}
+
+/**
+ * Simple color darkening for hover states.
+ * Reduces each RGB channel by ~12%.
+ */
+function darkenColor(hex: string): string {
+  const cleaned = hex.replace('#', '');
+  if (cleaned.length !== 6) return hex;
+
+  const num = parseInt(cleaned, 16);
+  if (isNaN(num)) return hex;
+
+  const r = Math.max(0, ((num >> 16) & 0xff) - 30);
+  const g = Math.max(0, ((num >> 8) & 0xff) - 30);
+  const b = Math.max(0, (num & 0xff) - 30);
+
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
 // ─── Shared CSS custom properties and base reset ────────────────────
 
 const baseReset = `
@@ -10,21 +57,8 @@ const baseReset = `
   }
 
   :host {
-    --support-primary-color: #2563eb;
-    --support-primary-hover: #1d4ed8;
-    --support-bg: #ffffff;
-    --support-bg-secondary: #f8fafc;
-    --support-text: #1e293b;
-    --support-text-secondary: #64748b;
-    --support-border: #e2e8f0;
-    --support-error: #dc2626;
-    --support-success: #16a34a;
-    --support-radius: 8px;
-    --support-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
-
     font-family: var(--support-font);
-    font-size: 14px;
+    font-size: var(--support-font-size);
     line-height: 1.5;
     color: var(--support-text);
   }
@@ -66,10 +100,10 @@ export const modalStyles = `
     bottom: 80px;
     right: 16px;
     background: var(--support-bg);
-    border-radius: 12px;
+    border-radius: var(--support-radius);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
-    width: 380px;
-    max-height: 520px;
+    width: var(--support-panel-width);
+    max-height: var(--support-panel-max-height);
     display: flex;
     flex-direction: column;
     animation: panel-slide-in 0.2s ease-out;
@@ -271,7 +305,7 @@ export const modalStyles = `
     top: 0px;
     width: 6px;
     height: 9px;
-    border: solid #fff;
+    border: solid var(--support-primary-text);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
   }
@@ -448,7 +482,7 @@ export const modalStyles = `
 
   .btn-primary {
     background: var(--support-primary-color);
-    color: #ffffff;
+    color: var(--support-primary-text);
   }
 
   .btn-primary:hover:not(:disabled) {
@@ -465,7 +499,7 @@ export const modalStyles = `
     width: 14px;
     height: 14px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
+    border-top-color: var(--support-primary-text);
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
@@ -541,7 +575,7 @@ export const triggerStyles = `
     border: none;
     cursor: pointer;
     background: var(--support-primary-color);
-    color: #ffffff;
+    color: var(--support-primary-text);
     font-family: var(--support-font);
     font-size: 13px;
     font-weight: 500;
@@ -614,8 +648,11 @@ export const triggerStyles = `
   @media (max-width: 480px) {
     .trigger-btn {
       font-size: 0;
-      padding: 12px;
+      padding: 0;
       border-radius: 50%;
+      width: var(--support-trigger-size);
+      height: var(--support-trigger-size);
+      justify-content: center;
     }
 
     .trigger-btn .trigger-label {
@@ -778,7 +815,7 @@ export const chatStyles = `
   }
 
   .assistant .chat-bubble {
-    background: #f3f4f6;
+    background: var(--support-assistant-bubble);
     color: var(--support-text);
     border-bottom-left-radius: 4px;
     white-space: normal;
@@ -881,8 +918,8 @@ export const chatStyles = `
   }
 
   .user .chat-bubble {
-    background: #2563eb;
-    color: #ffffff;
+    background: var(--support-primary-color);
+    color: var(--support-primary-text);
     border-bottom-right-radius: 4px;
   }
 
@@ -912,7 +949,7 @@ export const chatStyles = `
     display: flex;
     gap: 4px;
     padding: 10px 14px;
-    background: #f3f4f6;
+    background: var(--support-assistant-bubble);
     border-radius: 12px;
     border-bottom-left-radius: 4px;
   }
@@ -980,7 +1017,7 @@ export const chatStyles = `
   .chat-send-btn {
     appearance: none;
     background: var(--support-primary-color);
-    color: #ffffff;
+    color: var(--support-primary-text);
     border: none;
     cursor: pointer;
     width: 40px;

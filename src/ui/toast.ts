@@ -1,5 +1,9 @@
+import { buildThemeVars } from './styles';
+import type { ThemeConfig } from '../types';
+
 export interface ToastConfig {
   primaryColor: string;
+  theme?: ThemeConfig;
 }
 
 export interface ToastShowOptions {
@@ -16,7 +20,7 @@ export interface Toast {
 
 const AUTO_DISMISS_MS = 15_000;
 
-function getToastStyles(primaryColor: string): string {
+function getToastStyles(): string {
   return `
     :host {
       all: initial;
@@ -30,7 +34,7 @@ function getToastStyles(primaryColor: string): string {
       z-index: 2147483647;
       opacity: 0;
       transition: transform 0.3s ease, opacity 0.3s ease;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--support-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     }
 
     .toast-container.visible {
@@ -61,7 +65,7 @@ function getToastStyles(primaryColor: string): string {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 14px;
+      font-size: var(--support-font-size, 14px);
       line-height: 1.4;
     }
 
@@ -91,8 +95,8 @@ function getToastStyles(primaryColor: string): string {
     }
 
     .toast-btn-action {
-      background: ${primaryColor};
-      color: #fff;
+      background: var(--support-primary-color, #2563eb);
+      color: var(--support-primary-text, #fff);
     }
 
     .toast-btn-dismiss {
@@ -124,7 +128,7 @@ export function createToast(config: ToastConfig): Toast {
     shadowRoot = host.attachShadow({ mode: 'open' });
 
     const style = document.createElement('style');
-    style.textContent = getToastStyles(config.primaryColor);
+    style.textContent = buildThemeVars(config.theme) + getToastStyles();
     shadowRoot.appendChild(style);
 
     document.body.appendChild(host);
