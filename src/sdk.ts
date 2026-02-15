@@ -17,6 +17,10 @@ import {
 } from './capture/breadcrumbs';
 import { createErrorCapture, type ErrorCapture } from './capture/errors';
 import {
+  createRageClickCapture,
+  type RageClickCapture,
+} from './capture/rage-click';
+import {
   createPerformanceCapture,
   type PerformanceCapture,
 } from './capture/performance';
@@ -56,6 +60,7 @@ export class SupportSDK {
   private breadcrumbCapture: BreadcrumbCapture | null = null;
   private screenshotCapture: ScreenshotCapture | null = null;
   private errorCapture: ErrorCapture | null = null;
+  private rageClickCapture: RageClickCapture | null = null;
   private performanceCapture: PerformanceCapture | null = null;
   private transport: Transport | null = null;
   private modal: ReviewModal | null = null;
@@ -156,6 +161,15 @@ export class SupportSDK {
     // Screenshot capture
     if (captureConfig.screenshot !== false) {
       this.screenshotCapture = createScreenshotCapture();
+    }
+
+    // Rage click capture
+    if (captureConfig.rageClicks !== false) {
+      const opts =
+        typeof captureConfig.rageClicks === 'object'
+          ? captureConfig.rageClicks
+          : {};
+      this.rageClickCapture = createRageClickCapture(opts);
     }
 
     // Performance capture
@@ -314,6 +328,7 @@ export class SupportSDK {
     const consoleLogs = this.consoleCapture?.freeze();
     const networkLogs = this.networkCapture?.freeze();
     const breadcrumbs = this.breadcrumbCapture?.freeze();
+    const rageClicks = this.rageClickCapture?.getDetected();
 
     // Capture screenshot
     let screenshot: Blob | null = null;
@@ -338,6 +353,7 @@ export class SupportSDK {
           networkLogs,
           browserInfo,
           breadcrumbs,
+          rageClicks,
           errorInfo: this.frozenErrorInfo ?? undefined,
           performanceMetrics,
         });
@@ -361,6 +377,7 @@ export class SupportSDK {
     const consoleLogs = this.consoleCapture?.freeze();
     const networkLogs = this.networkCapture?.freeze();
     const breadcrumbs = this.breadcrumbCapture?.freeze();
+    const rageClicks = this.rageClickCapture?.getDetected();
 
     // 2. Take screenshot
     let screenshot: Blob | null = null;
@@ -381,6 +398,7 @@ export class SupportSDK {
       networkLogs,
       browserInfo,
       breadcrumbs,
+      rageClicks,
       errorInfo: this.frozenErrorInfo ?? undefined,
       performanceMetrics,
     });
@@ -416,6 +434,7 @@ export class SupportSDK {
     this.networkCapture?.stop();
     this.breadcrumbCapture?.stop();
     this.errorCapture?.stop();
+    this.rageClickCapture?.destroy();
     this.performanceCapture?.destroy();
 
     // Remove UI
@@ -431,6 +450,7 @@ export class SupportSDK {
     this.breadcrumbCapture = null;
     this.screenshotCapture = null;
     this.errorCapture = null;
+    this.rageClickCapture = null;
     this.performanceCapture = null;
     this.transport = null;
     this.modal = null;

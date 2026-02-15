@@ -30,6 +30,13 @@ export interface AttachmentConfig {
   allowedTypes?: string[];
 }
 
+export interface RageClickConfig {
+  threshold?: number;
+  timeWindow?: number;
+  radiusPx?: number;
+  maxItems?: number;
+}
+
 export interface PerformanceCaptureConfig {
   longTaskThreshold?: number;
   maxLongTasks?: number;
@@ -41,6 +48,7 @@ export interface CaptureConfig {
   breadcrumbs?: false | BufferConfig;
   screenshot?: boolean;
   attachments?: AttachmentConfig;
+  rageClicks?: false | RageClickConfig;
   performance?: boolean | PerformanceCaptureConfig;
 }
 
@@ -169,6 +177,15 @@ export interface ErrorInfo {
   timestamp: number;
 }
 
+export interface RageClick {
+  element: string;
+  x: number;
+  y: number;
+  clicks: number;
+  timestamp: number;
+  url: string;
+}
+
 // ─── Attachment Metadata ──────────────────────────────────────────────
 
 export interface AttachmentMetadata {
@@ -212,6 +229,7 @@ export interface DiagnosticReport {
   browser: BrowserInfo;
   screenshot: string | null;
   errors: ErrorInfo[];
+  rageClicks: RageClick[];
   performance: PerformanceMetrics | null;
   attachments?: AttachmentMetadata[];
   user: UserContext | null;
@@ -238,6 +256,7 @@ export interface DiagnosticSnapshot {
   failedRequests: NetworkEntry[];
   consoleErrors: ConsoleEntry[];
   breadcrumbs: Breadcrumb[];
+  rageClicks: RageClick[];
   browser: BrowserInfo;
   currentUrl: string;
   performance: PerformanceMetrics | null;

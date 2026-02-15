@@ -18,6 +18,8 @@ export type {
   BrowserInfo,
   Breadcrumb,
   ErrorInfo,
+  RageClick,
+  RageClickConfig,
   AttachmentMetadata,
   PerformanceMetrics,
   LongTaskEntry,
