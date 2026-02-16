@@ -20,6 +20,8 @@ function makeMockChatManager(
     onDone: vi.fn(),
     onError: vi.fn(),
     getMessages: vi.fn(() => []),
+    getLastUserMessage: vi.fn(() => null),
+    retry: vi.fn(),
     isStreaming: vi.fn(() => false),
     abort: vi.fn(),
     destroy: vi.fn(),
@@ -544,6 +546,20 @@ describe('createChatView', () => {
       chatView.destroy();
 
       expect(document.body.contains(container)).toBe(false);
+    });
+
+    it('removes chat error bubble from DOM on destroy', () => {
+      const container = chatView.getContainer();
+      document.body.appendChild(container);
+
+      chatView.showChatError('Error occurred');
+      expect(container.querySelector('.chat-bubble-error')).not.toBeNull();
+
+      chatView.destroy();
+
+      // The entire container is removed, but the error bubble should have
+      // been cleaned up via clearChatError() before container removal
+      expect(document.body.querySelector('.chat-bubble-error')).toBeNull();
     });
   });
 

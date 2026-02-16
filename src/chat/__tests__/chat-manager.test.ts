@@ -476,6 +476,42 @@ describe('createChatManager', () => {
       );
     });
 
+    it('does nothing when streaming is in progress', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let resolveStream: (() => void) | null = null;
+
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, _onText, _onSummary, onDone) => {
+          await new Promise<void>((resolve) => {
+            resolveStream = () => {
+              onDone();
+              resolve();
+            };
+          });
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      expect(manager.isStreaming()).toBe(true);
+
+      // Attempt retry while streaming — should no-op
+      manager.retry();
+
+      expect(streamChatMock).toHaveBeenCalledOnce();
+
+      resolveStream!();
+
+      await vi.waitFor(() => {
+        expect(manager.isStreaming()).toBe(false);
+      });
+    });
+
     it('does nothing when no user messages exist', async () => {
       const streamChatMock = vi.mocked(chatTransport.streamChat);
       streamChatMock.mockImplementation(

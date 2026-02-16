@@ -180,6 +180,7 @@ export function createChatManager(config: {
 
   function retry(): void {
     if (destroyed) return;
+    if (streaming) return;
 
     const lastContent = getLastUserMessage();
     if (!lastContent) return;

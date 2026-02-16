@@ -760,12 +760,12 @@ export function createChatView(
     }
     hideThinking();
     hideTypingIndicator();
+    clearChatError();
     container.remove();
     currentStreamingBubble = null;
     currentStreamingCursor = null;
     currentStreamingContent = '';
     errorEl = null;
-    chatErrorBubbleEl = null;
     summaryContainer = null;
     summaryActionsEl = null;
     currentSummary = null;
