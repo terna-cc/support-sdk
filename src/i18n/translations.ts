@@ -19,9 +19,9 @@ export interface Translations {
 
 export const translations: Record<string, Translations> = {
   en: {
-    triggerLabel: 'Report Issue',
-    modalTitle: 'Report Issue',
-    inputPlaceholder: 'Type your message...',
+    triggerLabel: 'Help',
+    modalTitle: 'Help Center',
+    inputPlaceholder: 'Ask a question or report an issue...',
     sendButton: 'Send',
     submitButton: 'Submit',
     keepChatting: 'Keep chatting',
@@ -37,9 +37,9 @@ export const translations: Record<string, Translations> = {
     submitFailed: 'Failed to submit report',
   },
   es: {
-    triggerLabel: 'Reportar problema',
-    modalTitle: 'Reportar problema',
-    inputPlaceholder: 'Escribe tu mensaje...',
+    triggerLabel: 'Ayuda',
+    modalTitle: 'Centro de ayuda',
+    inputPlaceholder: 'Haz una pregunta o reporta un problema...',
     sendButton: 'Enviar',
     submitButton: 'Enviar',
     keepChatting: 'Seguir conversando',

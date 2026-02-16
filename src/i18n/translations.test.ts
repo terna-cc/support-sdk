@@ -4,9 +4,9 @@ import { getTranslations, translations } from './translations';
 describe('translations', () => {
   it('has English translations', () => {
     expect(translations['en']).toBeDefined();
-    expect(translations['en'].triggerLabel).toBe('Report Issue');
-    expect(translations['en'].modalTitle).toBe('Report Issue');
-    expect(translations['en'].inputPlaceholder).toBe('Type your message...');
+    expect(translations['en'].triggerLabel).toBe('Help');
+    expect(translations['en'].modalTitle).toBe('Help Center');
+    expect(translations['en'].inputPlaceholder).toBe('Ask a question or report an issue...');
     expect(translations['en'].sendButton).toBe('Send');
     expect(translations['en'].submitButton).toBe('Submit');
     expect(translations['en'].keepChatting).toBe('Keep chatting');
@@ -17,9 +17,9 @@ describe('translations', () => {
 
   it('has Spanish translations', () => {
     expect(translations['es']).toBeDefined();
-    expect(translations['es'].triggerLabel).toBe('Reportar problema');
-    expect(translations['es'].modalTitle).toBe('Reportar problema');
-    expect(translations['es'].inputPlaceholder).toBe('Escribe tu mensaje...');
+    expect(translations['es'].triggerLabel).toBe('Ayuda');
+    expect(translations['es'].modalTitle).toBe('Centro de ayuda');
+    expect(translations['es'].inputPlaceholder).toBe('Haz una pregunta o reporta un problema...');
     expect(translations['es'].sendButton).toBe('Enviar');
     expect(translations['es'].submitButton).toBe('Enviar');
     expect(translations['es'].keepChatting).toBe('Seguir conversando');
@@ -34,32 +34,32 @@ describe('translations', () => {
 describe('getTranslations', () => {
   it('returns English for "en"', () => {
     const t = getTranslations('en');
-    expect(t.triggerLabel).toBe('Report Issue');
+    expect(t.triggerLabel).toBe('Help');
   });
 
   it('returns Spanish for "es"', () => {
     const t = getTranslations('es');
-    expect(t.triggerLabel).toBe('Reportar problema');
+    expect(t.triggerLabel).toBe('Ayuda');
   });
 
   it('extracts language from locale with region (es-MX)', () => {
     const t = getTranslations('es-MX');
-    expect(t.triggerLabel).toBe('Reportar problema');
+    expect(t.triggerLabel).toBe('Ayuda');
   });
 
   it('extracts language from locale with region (en-US)', () => {
     const t = getTranslations('en-US');
-    expect(t.triggerLabel).toBe('Report Issue');
+    expect(t.triggerLabel).toBe('Help');
   });
 
   it('falls back to English for unsupported locale', () => {
     const t = getTranslations('fr');
-    expect(t.triggerLabel).toBe('Report Issue');
+    expect(t.triggerLabel).toBe('Help');
   });
 
   it('falls back to English for unknown locale with region', () => {
     const t = getTranslations('ja-JP');
-    expect(t.triggerLabel).toBe('Report Issue');
+    expect(t.triggerLabel).toBe('Help');
   });
 
   it('returns all expected keys for English', () => {
