@@ -718,12 +718,12 @@ export function createChatView(
       attachmentPreviewBar.remove();
       attachmentPreviewBar = null;
     }
+    hideThinking();
+    hideTypingIndicator();
     container.remove();
     currentStreamingBubble = null;
     currentStreamingCursor = null;
     currentStreamingContent = '';
-    thinkingEl = null;
-    typingEl = null;
     errorEl = null;
     summaryContainer = null;
     summaryActionsEl = null;

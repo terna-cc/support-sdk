@@ -450,6 +450,7 @@ export function createReviewModal(
         onKeepChatting: () => {
           if (chatView) {
             chatView.showChat();
+            chatView.showTypingIndicator();
             manager.sendMessage("I'd like to adjust the summary");
           }
         },
