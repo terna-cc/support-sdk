@@ -868,7 +868,9 @@ describe('createChatView', () => {
       const input = container.querySelector(
         '.chat-input',
       ) as HTMLTextAreaElement;
-      expect(input.placeholder).toBe('Haz una pregunta o reporta un problema...');
+      expect(input.placeholder).toBe(
+        'Haz una pregunta o reporta un problema...',
+      );
 
       esView.destroy();
     });

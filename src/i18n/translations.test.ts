@@ -6,7 +6,9 @@ describe('translations', () => {
     expect(translations['en']).toBeDefined();
     expect(translations['en'].triggerLabel).toBe('Help');
     expect(translations['en'].modalTitle).toBe('Help Center');
-    expect(translations['en'].inputPlaceholder).toBe('Ask a question or report an issue...');
+    expect(translations['en'].inputPlaceholder).toBe(
+      'Ask a question or report an issue...',
+    );
     expect(translations['en'].sendButton).toBe('Send');
     expect(translations['en'].submitButton).toBe('Submit');
     expect(translations['en'].keepChatting).toBe('Keep chatting');
@@ -19,7 +21,9 @@ describe('translations', () => {
     expect(translations['es']).toBeDefined();
     expect(translations['es'].triggerLabel).toBe('Ayuda');
     expect(translations['es'].modalTitle).toBe('Centro de ayuda');
-    expect(translations['es'].inputPlaceholder).toBe('Haz una pregunta o reporta un problema...');
+    expect(translations['es'].inputPlaceholder).toBe(
+      'Haz una pregunta o reporta un problema...',
+    );
     expect(translations['es'].sendButton).toBe('Enviar');
     expect(translations['es'].submitButton).toBe('Enviar');
     expect(translations['es'].keepChatting).toBe('Seguir conversando');
