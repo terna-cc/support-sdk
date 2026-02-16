@@ -15,6 +15,8 @@ export interface ChatManager {
   onDone(callback: () => void): void;
   onError(callback: (error: Error) => void): void;
   getMessages(): ChatMessage[];
+  getLastUserMessage(): string | null;
+  retry(): void;
   isStreaming(): boolean;
   abort(): void;
   destroy(): void;
@@ -102,6 +104,11 @@ export function createChatManager(config: {
         },
         abortController.signal,
         config.locale,
+        (errorMessage: string) => {
+          streaming = false;
+          if (destroyed) return;
+          errorCallback?.(new Error(errorMessage || 'An error occurred'));
+        },
       );
     } catch (err) {
       streaming = false;
@@ -162,6 +169,33 @@ export function createChatManager(config: {
     return [...messages];
   }
 
+  function getLastUserMessage(): string | null {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        return messages[i].content;
+      }
+    }
+    return null;
+  }
+
+  function retry(): void {
+    if (destroyed) return;
+    if (streaming) return;
+
+    const lastContent = getLastUserMessage();
+    if (!lastContent) return;
+
+    // Remove the last user message so sendMessage re-adds it
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        messages.splice(i);
+        break;
+      }
+    }
+
+    sendMessage(lastContent);
+  }
+
   function getIsStreaming(): boolean {
     return streaming;
   }
@@ -189,6 +223,8 @@ export function createChatManager(config: {
     onDone,
     onError,
     getMessages,
+    getLastUserMessage,
+    retry,
     isStreaming: getIsStreaming,
     abort,
     destroy,

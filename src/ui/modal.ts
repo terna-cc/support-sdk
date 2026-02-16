@@ -481,12 +481,16 @@ export function createReviewModal(
       chatView?.setInputEnabled(true);
     });
 
-    manager.onError((err) => {
+    manager.onError(() => {
       chatView?.hideThinking();
       chatView?.hideTypingIndicator();
       chatView?.finalizeAssistantMessage();
       chatView?.setInputEnabled(true);
-      chatView?.showError(err.message);
+      chatView?.showChatError(translations.errorMessage, () => {
+        chatView?.showThinking();
+        chatView?.setInputEnabled(false);
+        manager.retry();
+      });
     });
 
     // Start the chat

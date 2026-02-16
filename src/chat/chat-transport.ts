@@ -10,6 +10,7 @@ export async function streamChat(
   onDone: () => void,
   signal: AbortSignal,
   locale?: string,
+  onError?: (message: string) => void,
 ): Promise<void> {
   const url = `${endpoint.replace(/\/+$/, '')}/chat`;
 
@@ -74,6 +75,9 @@ export async function streamChat(
               onSummary(parsed.data);
             }
             break;
+          case 'error':
+            onError?.(typeof parsed.content === 'string' ? parsed.content : '');
+            return;
           case 'done':
             onDone();
             return;

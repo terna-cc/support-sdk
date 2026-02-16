@@ -1245,6 +1245,37 @@ export const chatStyles = `
     text-align: center;
   }
 
+  .chat-bubble-error {
+    background: #fef2f2 !important;
+    color: var(--support-error) !important;
+    border: 1px solid #fecaca;
+  }
+
+  .chat-retry-btn {
+    appearance: none;
+    display: block;
+    margin-top: 8px;
+    background: var(--support-bg);
+    color: var(--support-error);
+    border: 1px solid #fecaca;
+    cursor: pointer;
+    font-family: var(--support-font);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--support-radius);
+    transition: background 0.1s;
+  }
+
+  .chat-retry-btn:hover {
+    background: #fef2f2;
+  }
+
+  .chat-retry-btn:focus-visible {
+    outline: 2px solid var(--support-primary-color);
+    outline-offset: 2px;
+  }
+
   /* ── Attachment button ── */
 
   .chat-attach-btn {

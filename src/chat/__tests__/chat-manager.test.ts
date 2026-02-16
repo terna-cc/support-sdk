@@ -396,6 +396,180 @@ describe('createChatManager', () => {
     });
   });
 
+  describe('getLastUserMessage()', () => {
+    it('returns null when no user messages exist', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          onText('Hello!');
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(manager.getMessages()).toHaveLength(1);
+      });
+
+      expect(manager.getLastUserMessage()).toBeNull();
+    });
+
+    it('returns the last user message content', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let callCount = 0;
+
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          callCount++;
+          onText(`Response ${callCount}`);
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+      await vi.waitFor(() => expect(callCount).toBe(1));
+
+      manager.sendMessage('First question');
+      await vi.waitFor(() => expect(callCount).toBe(2));
+
+      manager.sendMessage('Second question');
+      await vi.waitFor(() => expect(callCount).toBe(3));
+
+      expect(manager.getLastUserMessage()).toBe('Second question');
+    });
+  });
+
+  describe('retry()', () => {
+    it('re-sends the last user message', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let callCount = 0;
+
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          callCount++;
+          onText(`Response ${callCount}`);
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+      await vi.waitFor(() => expect(callCount).toBe(1));
+
+      manager.sendMessage('My bug report');
+      await vi.waitFor(() => expect(callCount).toBe(2));
+
+      manager.retry();
+      await vi.waitFor(() => expect(callCount).toBe(3));
+
+      // The retried call should contain the same user message
+      const lastCall = streamChatMock.mock.calls[2];
+      const sentMessages = lastCall[1];
+      const userMessages = sentMessages.filter(
+        (m: { role: string }) => m.role === 'user',
+      );
+      expect(userMessages[userMessages.length - 1].content).toBe(
+        'My bug report',
+      );
+    });
+
+    it('does nothing when streaming is in progress', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let resolveStream: (() => void) | null = null;
+
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, _onText, _onSummary, onDone) => {
+          await new Promise<void>((resolve) => {
+            resolveStream = () => {
+              onDone();
+              resolve();
+            };
+          });
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      expect(manager.isStreaming()).toBe(true);
+
+      // Attempt retry while streaming — should no-op
+      manager.retry();
+
+      expect(streamChatMock).toHaveBeenCalledOnce();
+
+      resolveStream!();
+
+      await vi.waitFor(() => {
+        expect(manager.isStreaming()).toBe(false);
+      });
+    });
+
+    it('does nothing when no user messages exist', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          onText('Hello!');
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      manager.retry();
+
+      // Should not make additional calls since there's no user message
+      expect(streamChatMock).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('SSE error event', () => {
+    it('calls onError callback when SSE error event is received', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (
+          _ep,
+          _msgs,
+          _ctx,
+          _headers,
+          _onText,
+          _onSummary,
+          _onDone,
+          _signal,
+          _locale,
+          onError,
+        ) => {
+          onError?.('Server error occurred');
+        },
+      );
+
+      const manager = makeManager();
+      const errorCallback = vi.fn();
+      manager.onError(errorCallback);
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(errorCallback).toHaveBeenCalledOnce();
+      });
+
+      expect(errorCallback.mock.calls[0][0].message).toBe(
+        'Server error occurred',
+      );
+    });
+  });
+
   describe('getMessages()', () => {
     it('returns a copy of messages', async () => {
       const streamChatMock = vi.mocked(chatTransport.streamChat);

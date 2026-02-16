@@ -23,6 +23,7 @@ export interface ChatView {
   showChat(): void;
   showSummary(summary: ReportSummary): void;
   showError(message: string): void;
+  showChatError(message: string, onRetry?: () => void): void;
   addAssistantChunk(text: string): void;
   showThinking(): void;
   hideThinking(): void;
@@ -159,6 +160,9 @@ export function createChatView(
   // ── Error area ──
   let errorEl: HTMLElement | null = null;
 
+  // ── Chat error bubble (in messages area) ──
+  let chatErrorBubbleEl: HTMLElement | null = null;
+
   // ── Attachment preview bar (above input area) ──
   let attachmentPreviewBar: HTMLElement | null = null;
 
@@ -291,6 +295,7 @@ export function createChatView(
     sendBtn.disabled = true;
 
     clearError();
+    clearChatError();
     addUserMessage(content, currentAttachments);
     showTypingIndicator();
     chatManager.sendMessage(content);
@@ -526,6 +531,41 @@ export function createChatView(
     }
   }
 
+  function clearChatError(): void {
+    if (chatErrorBubbleEl) {
+      chatErrorBubbleEl.remove();
+      chatErrorBubbleEl = null;
+    }
+  }
+
+  function showChatError(message: string, onRetry?: () => void): void {
+    clearChatError();
+
+    chatErrorBubbleEl = el('div', 'chat-message assistant');
+
+    const avatar = el('div', 'chat-avatar');
+    avatar.textContent = '\u{1F916}';
+
+    const bubble = el('div', 'chat-bubble chat-bubble-error');
+    bubble.textContent = message;
+
+    if (onRetry) {
+      const retryBtn = el('button', 'chat-retry-btn');
+      retryBtn.type = 'button';
+      retryBtn.textContent = translations.retryButton;
+      retryBtn.addEventListener('click', () => {
+        clearChatError();
+        onRetry();
+      });
+      bubble.appendChild(retryBtn);
+    }
+
+    chatErrorBubbleEl.appendChild(avatar);
+    chatErrorBubbleEl.appendChild(bubble);
+    messagesContainer.appendChild(chatErrorBubbleEl);
+    scrollToBottom();
+  }
+
   function setInputEnabled(enabled: boolean): void {
     chatInput.disabled = !enabled;
     sendBtn.disabled = !enabled || chatInput.value.trim() === '';
@@ -720,6 +760,7 @@ export function createChatView(
     }
     hideThinking();
     hideTypingIndicator();
+    clearChatError();
     container.remove();
     currentStreamingBubble = null;
     currentStreamingCursor = null;
@@ -735,6 +776,7 @@ export function createChatView(
     showChat,
     showSummary,
     showError,
+    showChatError,
     addAssistantChunk,
     showThinking,
     hideThinking,
