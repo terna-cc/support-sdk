@@ -26,6 +26,8 @@ export interface ChatView {
   addAssistantChunk(text: string): void;
   showThinking(): void;
   hideThinking(): void;
+  showTypingIndicator(): void;
+  hideTypingIndicator(): void;
   finalizeAssistantMessage(): void;
   addUserMessage(content: string): void;
   setInputEnabled(enabled: boolean): void;
@@ -145,6 +147,9 @@ export function createChatView(
 
   // ── Thinking indicator ──
   let thinkingEl: HTMLElement | null = null;
+
+  // ── Typing indicator (assistant bubble with animated dots) ──
+  let typingEl: HTMLElement | null = null;
 
   // ── Current streaming bubble ──
   let currentStreamingBubble: HTMLElement | null = null;
@@ -287,6 +292,7 @@ export function createChatView(
 
     clearError();
     addUserMessage(content, currentAttachments);
+    showTypingIndicator();
     chatManager.sendMessage(content);
 
     // Clear attachments after sending (but don't destroy — they stay for submission)
@@ -418,6 +424,7 @@ export function createChatView(
 
   function addAssistantChunk(text: string): void {
     hideThinking();
+    hideTypingIndicator();
 
     if (!currentStreamingBubble) {
       const msg = createAssistantMessage();
@@ -477,6 +484,29 @@ export function createChatView(
     if (thinkingEl) {
       thinkingEl.remove();
       thinkingEl = null;
+    }
+  }
+
+  function showTypingIndicator(): void {
+    if (typingEl) return;
+
+    typingEl = el('div', 'typing-indicator');
+    const avatar = el('div', 'chat-avatar');
+    avatar.textContent = '\u{1F916}';
+    const dots = el('div', 'typing-dots');
+    for (let i = 0; i < 3; i++) {
+      dots.appendChild(el('span', 'typing-dot'));
+    }
+    typingEl.appendChild(avatar);
+    typingEl.appendChild(dots);
+    messagesContainer.appendChild(typingEl);
+    scrollToBottom();
+  }
+
+  function hideTypingIndicator(): void {
+    if (typingEl) {
+      typingEl.remove();
+      typingEl = null;
     }
   }
 
@@ -688,11 +718,12 @@ export function createChatView(
       attachmentPreviewBar.remove();
       attachmentPreviewBar = null;
     }
+    hideThinking();
+    hideTypingIndicator();
     container.remove();
     currentStreamingBubble = null;
     currentStreamingCursor = null;
     currentStreamingContent = '';
-    thinkingEl = null;
     errorEl = null;
     summaryContainer = null;
     summaryActionsEl = null;
@@ -707,6 +738,8 @@ export function createChatView(
     addAssistantChunk,
     showThinking,
     hideThinking,
+    showTypingIndicator,
+    hideTypingIndicator,
     finalizeAssistantMessage,
     addUserMessage,
     setInputEnabled,

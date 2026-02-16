@@ -194,6 +194,74 @@ describe('createChatView', () => {
     });
   });
 
+  describe('showTypingIndicator()', () => {
+    it('shows typing indicator with avatar and animated dots', () => {
+      chatView.showTypingIndicator();
+
+      const container = chatView.getContainer();
+      const typing = container.querySelector('.typing-indicator');
+      expect(typing).not.toBeNull();
+
+      const avatar = typing?.querySelector('.chat-avatar');
+      expect(avatar).not.toBeNull();
+
+      const dots = container.querySelectorAll('.typing-dot');
+      expect(dots).toHaveLength(3);
+    });
+
+    it('does not duplicate typing indicator', () => {
+      chatView.showTypingIndicator();
+      chatView.showTypingIndicator();
+
+      const container = chatView.getContainer();
+      const indicators = container.querySelectorAll('.typing-indicator');
+      expect(indicators).toHaveLength(1);
+    });
+  });
+
+  describe('hideTypingIndicator()', () => {
+    it('removes typing indicator', () => {
+      chatView.showTypingIndicator();
+      chatView.hideTypingIndicator();
+
+      const container = chatView.getContainer();
+      expect(container.querySelector('.typing-indicator')).toBeNull();
+    });
+  });
+
+  describe('typing indicator on send', () => {
+    it('shows typing indicator when user sends a message', () => {
+      const container = chatView.getContainer();
+      document.body.appendChild(container);
+
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
+      const sendBtn = container.querySelector(
+        '.chat-send-btn',
+      ) as HTMLButtonElement;
+
+      input.value = 'Test message';
+      input.dispatchEvent(new Event('input'));
+      sendBtn.click();
+
+      const typing = container.querySelector('.typing-indicator');
+      expect(typing).not.toBeNull();
+
+      container.remove();
+    });
+
+    it('hides typing indicator when first assistant chunk arrives', () => {
+      chatView.showTypingIndicator();
+
+      const container = chatView.getContainer();
+      expect(container.querySelector('.typing-indicator')).not.toBeNull();
+
+      chatView.addAssistantChunk('Hello');
+      expect(container.querySelector('.typing-indicator')).toBeNull();
+    });
+  });
+
   describe('showError()', () => {
     it('shows error message', () => {
       chatView.showError('Connection failed');
