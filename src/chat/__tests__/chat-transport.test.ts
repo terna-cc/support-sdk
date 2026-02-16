@@ -408,6 +408,61 @@ describe('streamChat', () => {
     expect(body.locale).toBe('es');
   });
 
+  it('parses error events and calls onError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetchWithStream([
+        'data: {"type":"error","content":"Something went wrong"}\n\n',
+      ]),
+    );
+
+    const onText = vi.fn();
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    await streamChat(
+      'https://api.test.com',
+      [],
+      null,
+      new Headers(),
+      onText,
+      vi.fn(),
+      onDone,
+      new AbortController().signal,
+      undefined,
+      onError,
+    );
+
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError).toHaveBeenCalledWith('Something went wrong');
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('passes empty string to onError when error event has no content', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetchWithStream(['data: {"type":"error"}\n\n']),
+    );
+
+    const onError = vi.fn();
+
+    await streamChat(
+      'https://api.test.com',
+      [],
+      null,
+      new Headers(),
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new AbortController().signal,
+      undefined,
+      onError,
+    );
+
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError).toHaveBeenCalledWith('');
+  });
+
   it('omits locale from request body when not provided', async () => {
     let capturedBody = '';
 

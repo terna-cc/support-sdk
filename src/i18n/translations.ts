@@ -15,6 +15,8 @@ export interface Translations {
   severity: string;
   submitting: string;
   submitFailed: string;
+  errorMessage: string;
+  retryButton: string;
 }
 
 export const translations: Record<string, Translations> = {
@@ -35,6 +37,9 @@ export const translations: Record<string, Translations> = {
     severity: 'Severity',
     submitting: 'Submitting...',
     submitFailed: 'Failed to submit report',
+    errorMessage:
+      'There was a problem processing your message. Please try again.',
+    retryButton: 'Try again',
   },
   es: {
     triggerLabel: 'Ayuda',
@@ -53,6 +58,9 @@ export const translations: Record<string, Translations> = {
     severity: 'Severidad',
     submitting: 'Enviando...',
     submitFailed: 'Error al enviar el reporte',
+    errorMessage:
+      'Hubo un problema al procesar tu mensaje. Por favor intenta de nuevo.',
+    retryButton: 'Intentar de nuevo',
   },
 };
 

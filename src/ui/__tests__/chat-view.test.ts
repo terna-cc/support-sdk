@@ -912,6 +912,106 @@ describe('createChatView', () => {
     });
   });
 
+  describe('showChatError()', () => {
+    it('shows error message bubble in messages area', () => {
+      chatView.showChatError('Something went wrong');
+
+      const container = chatView.getContainer();
+      const errorBubble = container.querySelector('.chat-bubble-error');
+      expect(errorBubble).not.toBeNull();
+      expect(errorBubble?.textContent).toContain('Something went wrong');
+    });
+
+    it('shows error as assistant message with avatar', () => {
+      chatView.showChatError('Error occurred');
+
+      const container = chatView.getContainer();
+      const assistantMsg = container.querySelector('.chat-message.assistant');
+      expect(assistantMsg).not.toBeNull();
+      const avatar = assistantMsg?.querySelector('.chat-avatar');
+      expect(avatar).not.toBeNull();
+    });
+
+    it('shows retry button when onRetry callback is provided', () => {
+      chatView.showChatError('Error occurred', () => {});
+
+      const container = chatView.getContainer();
+      const retryBtn = container.querySelector('.chat-retry-btn');
+      expect(retryBtn).not.toBeNull();
+      expect(retryBtn?.textContent).toBe('Try again');
+    });
+
+    it('does not show retry button when no onRetry callback', () => {
+      chatView.showChatError('Error occurred');
+
+      const container = chatView.getContainer();
+      const retryBtn = container.querySelector('.chat-retry-btn');
+      expect(retryBtn).toBeNull();
+    });
+
+    it('calls onRetry and removes error bubble when retry is clicked', () => {
+      const onRetry = vi.fn();
+      chatView.showChatError('Error occurred', onRetry);
+
+      const container = chatView.getContainer();
+      const retryBtn = container.querySelector(
+        '.chat-retry-btn',
+      ) as HTMLButtonElement;
+      retryBtn.click();
+
+      expect(onRetry).toHaveBeenCalledOnce();
+      expect(container.querySelector('.chat-bubble-error')).toBeNull();
+    });
+
+    it('replaces previous chat error bubble', () => {
+      chatView.showChatError('Error 1');
+      chatView.showChatError('Error 2');
+
+      const container = chatView.getContainer();
+      const errorBubbles = container.querySelectorAll('.chat-bubble-error');
+      expect(errorBubbles).toHaveLength(1);
+      expect(errorBubbles[0].textContent).toContain('Error 2');
+    });
+
+    it('uses Spanish retry button text', () => {
+      const esView = createChatView(
+        mockManager,
+        { onSubmit, onCancel, onKeepChatting },
+        getTranslations('es'),
+      );
+
+      esView.showChatError('Error', () => {});
+
+      const container = esView.getContainer();
+      const retryBtn = container.querySelector('.chat-retry-btn');
+      expect(retryBtn?.textContent).toBe('Intentar de nuevo');
+
+      esView.destroy();
+    });
+
+    it('is cleared when a new user message is sent', () => {
+      const container = chatView.getContainer();
+      document.body.appendChild(container);
+
+      chatView.showChatError('Error occurred');
+      expect(container.querySelector('.chat-bubble-error')).not.toBeNull();
+
+      const input = container.querySelector(
+        '.chat-input',
+      ) as HTMLTextAreaElement;
+      input.value = 'New message';
+      input.dispatchEvent(new Event('input'));
+      const sendBtn = container.querySelector(
+        '.chat-send-btn',
+      ) as HTMLButtonElement;
+      sendBtn.click();
+
+      expect(container.querySelector('.chat-bubble-error')).toBeNull();
+
+      container.remove();
+    });
+  });
+
   describe('i18n / translations', () => {
     it('uses translation for input placeholder', () => {
       const container = chatView.getContainer();
