@@ -850,7 +850,7 @@ describe('createChatView', () => {
       const input = container.querySelector(
         '.chat-input',
       ) as HTMLTextAreaElement;
-      expect(input.placeholder).toBe('Type your message...');
+      expect(input.placeholder).toBe('Ask a question or report an issue...');
     });
 
     it('uses Spanish translations when configured', () => {
@@ -868,7 +868,9 @@ describe('createChatView', () => {
       const input = container.querySelector(
         '.chat-input',
       ) as HTMLTextAreaElement;
-      expect(input.placeholder).toBe('Escribe tu mensaje...');
+      expect(input.placeholder).toBe(
+        'Haz una pregunta o reporta un problema...',
+      );
 
       esView.destroy();
     });
