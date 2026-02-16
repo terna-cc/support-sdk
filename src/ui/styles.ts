@@ -975,6 +975,63 @@ export const chatStyles = `
     30% { transform: translateY(-4px); opacity: 1; }
   }
 
+  /* ── Typing indicator (assistant bubble with animated dots) ── */
+
+  .typing-indicator {
+    display: flex;
+    gap: 8px;
+    max-width: 85%;
+    align-self: flex-start;
+    animation: message-fade-in 0.15s ease-out;
+  }
+
+  .typing-indicator .chat-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    background: var(--support-bg-secondary);
+    border: 1px solid var(--support-border);
+  }
+
+  .typing-indicator .typing-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--support-assistant-bubble);
+    color: var(--support-text);
+    border-radius: 12px;
+    border-bottom-left-radius: 4px;
+  }
+
+  .typing-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+    animation: typing-bounce 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
   .chat-input-area {
     display: flex;
     align-items: flex-end;

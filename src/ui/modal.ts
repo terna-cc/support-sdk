@@ -469,17 +469,20 @@ export function createReviewModal(
     manager.onSummary((summary) => {
       chatView?.finalizeAssistantMessage();
       chatView?.hideThinking();
+      chatView?.hideTypingIndicator();
       chatView?.showSummary(summary);
     });
 
     manager.onDone(() => {
       chatView?.finalizeAssistantMessage();
       chatView?.hideThinking();
+      chatView?.hideTypingIndicator();
       chatView?.setInputEnabled(true);
     });
 
     manager.onError((err) => {
       chatView?.hideThinking();
+      chatView?.hideTypingIndicator();
       chatView?.finalizeAssistantMessage();
       chatView?.setInputEnabled(true);
       chatView?.showError(err.message);
