@@ -439,10 +439,7 @@ describe('streamChat', () => {
   });
 
   it('passes empty string to onError when error event has no content', async () => {
-    vi.stubGlobal(
-      'fetch',
-      mockFetchWithStream(['data: {"type":"error"}\n\n']),
-    );
+    vi.stubGlobal('fetch', mockFetchWithStream(['data: {"type":"error"}\n\n']));
 
     const onError = vi.fn();
 

@@ -107,9 +107,7 @@ export function createChatManager(config: {
         (errorMessage: string) => {
           streaming = false;
           if (destroyed) return;
-          errorCallback?.(
-            new Error(errorMessage || 'An error occurred'),
-          );
+          errorCallback?.(new Error(errorMessage || 'An error occurred'));
         },
       );
     } catch (err) {

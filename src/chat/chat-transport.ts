@@ -76,9 +76,7 @@ export async function streamChat(
             }
             break;
           case 'error':
-            onError?.(
-              typeof parsed.content === 'string' ? parsed.content : '',
-            );
+            onError?.(typeof parsed.content === 'string' ? parsed.content : '');
             return;
           case 'done':
             onDone();
