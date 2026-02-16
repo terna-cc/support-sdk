@@ -282,19 +282,14 @@ export class SupportSDK {
     try {
       const auth = this.config.auth ?? { type: 'none' as const };
       const headers = await resolveAuthHeaders(auth);
-      headers.set('Content-Type', 'application/json');
 
-      const url = `${this.config.endpoint.replace(/\/+$/, '')}/chat`;
+      const url = `${this.config.endpoint.replace(/\/+$/, '')}/chat/health`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         headers,
-        body: JSON.stringify({
-          messages: [],
-          diagnostic_context: null,
-        }),
         signal: controller.signal,
       });
 
@@ -308,16 +303,6 @@ export class SupportSDK {
 
       // Chat endpoint is available (any non-404 response means it exists)
       this.modal?.setChatEnabled(true);
-
-      // Consume the body to prevent connection hanging
-      try {
-        // Cancel the stream since this was just a probe
-        if (response.body) {
-          await response.body.cancel();
-        }
-      } catch {
-        // ignore
-      }
     } catch (err) {
       if (err instanceof ChatTransportError && err.status === 404) {
         this.modal?.setChatEnabled(false);
