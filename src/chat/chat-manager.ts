@@ -206,12 +206,11 @@ export function createChatManager(config: {
   }
 
   function reset(): void {
+    abortCurrent();
     messages = [];
     diagnosticContext = null;
     isFirstRequest = false;
-    streaming = false;
     currentAssistantContent = '';
-    abortCurrent();
   }
 
   function destroy(): void {

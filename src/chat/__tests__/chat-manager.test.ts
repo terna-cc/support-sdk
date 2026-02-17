@@ -571,6 +571,39 @@ describe('createChatManager', () => {
   });
 
   describe('reset()', () => {
+    it('does not throw and keeps a consistent state when called before any session', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          onText('Greeting');
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+
+      // Calling reset before any session should be a no-op and not throw
+      expect(() => manager.reset()).not.toThrow();
+
+      // Ensure we are not in a streaming state and no transport calls were made
+      expect(manager.isStreaming()).toBe(false);
+      expect(manager.getMessages()).toEqual([]);
+      expect(streamChatMock).not.toHaveBeenCalled();
+
+      // A subsequent start() should behave normally
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      const [, messages, context] = streamChatMock.mock.calls[0];
+      expect(messages).toEqual([]);
+      expect(context).toEqual(mockDiagnostic);
+      expect(manager.getMessages()).toHaveLength(1);
+      expect(manager.getMessages()[0].content).toBe('Greeting');
+    });
+
     it('clears all state so a new session starts fresh', async () => {
       const streamChatMock = vi.mocked(chatTransport.streamChat);
       let callCount = 0;
