@@ -766,29 +766,6 @@ describe('createReviewModal', () => {
     });
 
     it('includes diagnostics in chat report submission', async () => {
-      const capturedOnSubmit:
-        | ((data: {
-            description: string;
-            conversation: { role: string; content: string }[];
-            aiSummary: {
-              category: string;
-              title: string;
-              description: string;
-              steps_to_reproduce: string[] | null;
-              expected_behavior: string | null;
-              actual_behavior: string | null;
-              severity: string;
-              tags: string[];
-            };
-          }) => Promise<void>)
-        | null = null;
-
-      // Capture the chat view's onSubmit callback via createChatView
-      // We mock the chat-view module indirectly by triggering the submit
-      // through the chat view's summary flow.
-      // Instead, we test that buildReport includes diagnostics by checking
-      // that the modal's onSubmit callback receives non-empty diagnostic data.
-
       const mockManager = makeMockChatManager({
         start: vi.fn(),
         onTextChunk: vi.fn(),
