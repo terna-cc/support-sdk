@@ -733,11 +733,7 @@ describe('createReviewModal', () => {
 
     it('sends non-empty diagnostic_context when chat starts', () => {
       const mockManager = makeMockChatManager();
-      const modal = createReviewModal(
-        config,
-        getTranslations('en'),
-        callbacks,
-      );
+      const modal = createReviewModal(config, getTranslations('en'), callbacks);
       modal.setChatManager(mockManager);
       modal.setChatEnabled(true);
 
@@ -770,7 +766,7 @@ describe('createReviewModal', () => {
     });
 
     it('includes diagnostics in chat report submission', async () => {
-      let capturedOnSubmit:
+      const capturedOnSubmit:
         | ((data: {
             description: string;
             conversation: { role: string; content: string }[];
@@ -801,11 +797,7 @@ describe('createReviewModal', () => {
         onError: vi.fn(),
       });
 
-      const modal = createReviewModal(
-        config,
-        getTranslations('en'),
-        callbacks,
-      );
+      const modal = createReviewModal(config, getTranslations('en'), callbacks);
       modal.setChatManager(mockManager);
       modal.setChatEnabled(true);
 
