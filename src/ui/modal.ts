@@ -364,6 +364,17 @@ export function createReviewModal(
     closeFn: () => void,
     cancelFn: () => void,
   ): { content: HTMLElement; onMount: () => void } {
+    // In chat mode there are no category checkboxes, so mark all
+    // available categories as included so buildReport() sends full data.
+    if (data.screenshot) checkedState.set('screenshot', true);
+    if (data.consoleLogs && data.consoleLogs.length > 0)
+      checkedState.set('console', true);
+    if (data.networkLogs && data.networkLogs.length > 0)
+      checkedState.set('network', true);
+    if (data.browserInfo) checkedState.set('browser', true);
+    if (data.breadcrumbs && data.breadcrumbs.length > 0)
+      checkedState.set('breadcrumbs', true);
+
     const content = el('div', 'modal-content');
 
     // ── Header ──
@@ -509,6 +520,7 @@ export function createReviewModal(
   function open(data: ModalData): void {
     if (host) close();
     currentData = data;
+    checkedState.clear();
 
     host = document.createElement('div');
     host.setAttribute('data-support-modal', '');
