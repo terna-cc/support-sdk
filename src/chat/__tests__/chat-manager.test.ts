@@ -57,6 +57,25 @@ const mockSummary: ReportSummary = {
   tags: [],
 };
 
+function createMockAttachmentManager(
+  attachments: Array<{
+    id: string;
+    file: File;
+    name: string;
+    type: string;
+    size: number;
+  }> = [],
+): AttachmentManager {
+  return {
+    getAll: () => attachments,
+    add: vi.fn(),
+    remove: vi.fn(),
+    clear: vi.fn(),
+    getTotalSize: vi.fn(),
+    destroy: vi.fn(),
+  } as AttachmentManager;
+}
+
 function makeManager(maxMessages = 20, attachmentManager?: AttachmentManager) {
   return createChatManager({
     endpoint: 'https://api.test.com',
@@ -736,39 +755,32 @@ describe('createChatManager', () => {
         },
       );
 
-      const mockAttachmentManager = {
-        getAll: () => [
-          {
-            id: '1',
-            file: new File([], 'test.png'),
-            name: 'test.png',
-            type: 'image/png',
-            size: 1234,
-          },
-          {
-            id: '2',
-            file: new File([], 'log.txt'),
-            name: 'log.txt',
-            type: 'text/plain',
-            size: 567,
-          },
-        ],
-        add: vi.fn(),
-        remove: vi.fn(),
-        clear: vi.fn(),
-        getTotalSize: vi.fn(),
-        destroy: vi.fn(),
-      } as AttachmentManager;
+      const mockAttMgr = createMockAttachmentManager([
+        {
+          id: '1',
+          file: new File([], 'test.png'),
+          name: 'test.png',
+          type: 'image/png',
+          size: 1234,
+        },
+        {
+          id: '2',
+          file: new File([], 'log.txt'),
+          name: 'log.txt',
+          type: 'text/plain',
+          size: 567,
+        },
+      ]);
 
-      const manager = makeManager(20, mockAttachmentManager);
+      const manager = makeManager(20, mockAttMgr);
       manager.start(mockDiagnostic);
 
       await vi.waitFor(() => {
         expect(streamChatMock).toHaveBeenCalledOnce();
       });
 
-      // attachmentMeta is the last parameter (index 10)
-      const attachmentMeta = streamChatMock.mock.calls[0][10];
+      const args = streamChatMock.mock.calls[0];
+      const attachmentMeta = args[args.length - 1];
       expect(attachmentMeta).toEqual([
         { name: 'test.png', type: 'image/png', size: 1234 },
         { name: 'log.txt', type: 'text/plain', size: 567 },
@@ -783,23 +795,17 @@ describe('createChatManager', () => {
         },
       );
 
-      const mockAttachmentManager = {
-        getAll: () => [],
-        add: vi.fn(),
-        remove: vi.fn(),
-        clear: vi.fn(),
-        getTotalSize: vi.fn(),
-        destroy: vi.fn(),
-      } as AttachmentManager;
+      const mockAttMgr = createMockAttachmentManager([]);
 
-      const manager = makeManager(20, mockAttachmentManager);
+      const manager = makeManager(20, mockAttMgr);
       manager.start(mockDiagnostic);
 
       await vi.waitFor(() => {
         expect(streamChatMock).toHaveBeenCalledOnce();
       });
 
-      const attachmentMeta = streamChatMock.mock.calls[0][10];
+      const args = streamChatMock.mock.calls[0];
+      const attachmentMeta = args[args.length - 1];
       expect(attachmentMeta).toBeUndefined();
     });
 
@@ -818,7 +824,8 @@ describe('createChatManager', () => {
         expect(streamChatMock).toHaveBeenCalledOnce();
       });
 
-      const attachmentMeta = streamChatMock.mock.calls[0][10];
+      const args = streamChatMock.mock.calls[0];
+      const attachmentMeta = args[args.length - 1];
       expect(attachmentMeta).toBeUndefined();
     });
   });
