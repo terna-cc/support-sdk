@@ -19,6 +19,7 @@ export interface ChatManager {
   retry(): void;
   isStreaming(): boolean;
   abort(): void;
+  reset(): void;
   destroy(): void;
 }
 
@@ -204,6 +205,14 @@ export function createChatManager(config: {
     abortCurrent();
   }
 
+  function reset(): void {
+    abortCurrent();
+    messages = [];
+    diagnosticContext = null;
+    isFirstRequest = false;
+    currentAssistantContent = '';
+  }
+
   function destroy(): void {
     destroyed = true;
     abortCurrent();
@@ -227,6 +236,7 @@ export function createChatManager(config: {
     retry,
     isStreaming: getIsStreaming,
     abort,
+    reset,
     destroy,
   };
 }

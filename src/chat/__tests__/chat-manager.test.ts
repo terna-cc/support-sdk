@@ -570,6 +570,161 @@ describe('createChatManager', () => {
     });
   });
 
+  describe('reset()', () => {
+    it('does not throw and keeps a consistent state when called before any session', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          onText('Greeting');
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+
+      // Calling reset before any session should be a no-op and not throw
+      expect(() => manager.reset()).not.toThrow();
+
+      // Ensure we are not in a streaming state and no transport calls were made
+      expect(manager.isStreaming()).toBe(false);
+      expect(manager.getMessages()).toEqual([]);
+      expect(streamChatMock).not.toHaveBeenCalled();
+
+      // A subsequent start() should behave normally
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      const [, messages, context] = streamChatMock.mock.calls[0];
+      expect(messages).toEqual([]);
+      expect(context).toEqual(mockDiagnostic);
+      expect(manager.getMessages()).toHaveLength(1);
+      expect(manager.getMessages()[0].content).toBe('Greeting');
+    });
+
+    it('clears all state so a new session starts fresh', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let callCount = 0;
+
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, ctx, _headers, onText, _onSummary, onDone) => {
+          callCount++;
+          if (callCount === 1) {
+            onText('First session greeting');
+            onDone();
+          } else {
+            // Second session should receive new diagnostic context
+            onText('Second session greeting');
+            onDone();
+          }
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(callCount).toBe(1);
+      });
+
+      // Accumulate some messages
+      expect(manager.getMessages()).toHaveLength(1);
+
+      // Reset clears everything
+      manager.reset();
+
+      expect(manager.getMessages()).toEqual([]);
+      expect(manager.isStreaming()).toBe(false);
+
+      // Start a new session — should work independently
+      const newDiagnostic: DiagnosticSnapshot = {
+        ...mockDiagnostic,
+        currentUrl: 'https://new-session.com',
+      };
+      manager.start(newDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(callCount).toBe(2);
+      });
+
+      // The second call should have the new diagnostic context
+      const [, messages, context] = streamChatMock.mock.calls[1];
+      expect(messages).toEqual([]);
+      expect(context).toEqual(newDiagnostic);
+
+      // Messages should only contain the second session's greeting
+      expect(manager.getMessages()).toHaveLength(1);
+      expect(manager.getMessages()[0].content).toBe('Second session greeting');
+    });
+
+    it('does not re-send old diagnostics after reset', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let callCount = 0;
+
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, onText, _onSummary, onDone) => {
+          callCount++;
+          onText(`Response ${callCount}`);
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+      await vi.waitFor(() => expect(callCount).toBe(1));
+
+      manager.reset();
+
+      // Send a message without calling start() first
+      manager.sendMessage('Hello after reset');
+      await vi.waitFor(() => expect(callCount).toBe(2));
+
+      // The context should be null since reset cleared it and isFirstRequest is false
+      const [, , context] = streamChatMock.mock.calls[1];
+      expect(context).toBeNull();
+    });
+
+    it('aborts in-flight stream on reset', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      let capturedSignal: AbortSignal | null = null;
+
+      streamChatMock.mockImplementation(
+        async (
+          _ep,
+          _msgs,
+          _ctx,
+          _headers,
+          _onText,
+          _onSummary,
+          _onDone,
+          signal,
+        ) => {
+          capturedSignal = signal;
+          await new Promise<void>((_, reject) => {
+            signal.addEventListener('abort', () => {
+              reject(new DOMException('Aborted', 'AbortError'));
+            });
+          });
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(capturedSignal).not.toBeNull();
+      });
+
+      manager.reset();
+
+      expect(capturedSignal!.aborted).toBe(true);
+      expect(manager.isStreaming()).toBe(false);
+      expect(manager.getMessages()).toEqual([]);
+    });
+  });
+
   describe('getMessages()', () => {
     it('returns a copy of messages', async () => {
       const streamChatMock = vi.mocked(chatTransport.streamChat);

@@ -451,6 +451,8 @@ export function createReviewModal(
               chatAttachments.length > 0 ? chatAttachments : undefined,
           });
 
+          manager.reset();
+
           // Close after brief delay on success
           setTimeout(() => closeFn(), 1500);
         },
