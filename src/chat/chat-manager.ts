@@ -1,4 +1,5 @@
 import type {
+  AttachmentMetadata,
   AuthConfig,
   ChatMessage,
   DiagnosticSnapshot,
@@ -6,6 +7,7 @@ import type {
 } from '../types';
 import { resolveAuthHeaders } from '../transport/http';
 import { streamChat, ChatTransportError } from './chat-transport';
+import type { AttachmentManager } from './attachment-manager';
 
 export interface ChatManager {
   start(diagnosticContext: DiagnosticSnapshot): void;
@@ -30,6 +32,7 @@ export function createChatManager(config: {
   auth: AuthConfig;
   maxMessages: number;
   locale?: string;
+  attachmentManager?: AttachmentManager;
 }): ChatManager {
   const maxMessages = config.maxMessages ?? DEFAULT_MAX_MESSAGES;
 
@@ -66,6 +69,13 @@ export function createChatManager(config: {
 
     const context = isFirstRequest ? diagnosticContext : null;
     isFirstRequest = false;
+
+    // Collect attachment metadata if an attachment manager is available
+    const attachments = config.attachmentManager?.getAll() ?? [];
+    const attachmentMeta: AttachmentMetadata[] | undefined =
+      attachments.length > 0
+        ? attachments.map((a) => ({ name: a.name, type: a.type, size: a.size }))
+        : undefined;
 
     let authHeaders: Headers;
     try {
@@ -110,6 +120,7 @@ export function createChatManager(config: {
           if (destroyed) return;
           errorCallback?.(new Error(errorMessage || 'An error occurred'));
         },
+        attachmentMeta,
       );
     } catch (err) {
       streaming = false;

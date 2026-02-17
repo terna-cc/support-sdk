@@ -249,6 +249,7 @@ export class SupportSDK {
         auth,
         maxMessages: chatConfig.maxMessages ?? 20,
         locale: this.locale,
+        attachmentManager: this.attachmentMgr ?? undefined,
       });
       this.modal.setChatManager(this.chatMgr);
 

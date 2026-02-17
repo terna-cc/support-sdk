@@ -1,4 +1,9 @@
-import type { ChatMessage, DiagnosticSnapshot, ReportSummary } from '../types';
+import type {
+  AttachmentMetadata,
+  ChatMessage,
+  DiagnosticSnapshot,
+  ReportSummary,
+} from '../types';
 
 export async function streamChat(
   endpoint: string,
@@ -11,6 +16,7 @@ export async function streamChat(
   signal: AbortSignal,
   locale?: string,
   onError?: (message: string) => void,
+  attachmentMeta?: AttachmentMetadata[],
 ): Promise<void> {
   const url = `${endpoint.replace(/\/+$/, '')}/chat`;
 
@@ -24,6 +30,7 @@ export async function streamChat(
     body: JSON.stringify({
       messages,
       diagnostic_context: diagnosticContext,
+      ...(attachmentMeta ? { attachment_meta: attachmentMeta } : {}),
       ...(locale ? { locale } : {}),
     }),
     signal,
