@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createChatManager } from '../chat-manager';
 import type { DiagnosticSnapshot, ReportSummary } from '../../types';
+import type { AttachmentManager } from '../attachment-manager';
 import * as chatTransport from '../chat-transport';
 
 // Mock the chat-transport module
@@ -56,11 +57,31 @@ const mockSummary: ReportSummary = {
   tags: [],
 };
 
-function makeManager(maxMessages = 20) {
+function createMockAttachmentManager(
+  attachments: Array<{
+    id: string;
+    file: File;
+    name: string;
+    type: string;
+    size: number;
+  }> = [],
+): AttachmentManager {
+  return {
+    getAll: () => attachments,
+    add: vi.fn(),
+    remove: vi.fn(),
+    clear: vi.fn(),
+    getTotalSize: vi.fn(),
+    destroy: vi.fn(),
+  } as AttachmentManager;
+}
+
+function makeManager(maxMessages = 20, attachmentManager?: AttachmentManager) {
   return createChatManager({
     endpoint: 'https://api.test.com',
     auth: { type: 'none' },
     maxMessages,
+    attachmentManager,
   });
 }
 
@@ -722,6 +743,90 @@ describe('createChatManager', () => {
       expect(capturedSignal!.aborted).toBe(true);
       expect(manager.isStreaming()).toBe(false);
       expect(manager.getMessages()).toEqual([]);
+    });
+  });
+
+  describe('attachment metadata', () => {
+    it('passes attachment_meta to transport when attachments exist', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, _onText, _onSummary, onDone) => {
+          onDone();
+        },
+      );
+
+      const mockAttMgr = createMockAttachmentManager([
+        {
+          id: '1',
+          file: new File([], 'test.png'),
+          name: 'test.png',
+          type: 'image/png',
+          size: 1234,
+        },
+        {
+          id: '2',
+          file: new File([], 'log.txt'),
+          name: 'log.txt',
+          type: 'text/plain',
+          size: 567,
+        },
+      ]);
+
+      const manager = makeManager(20, mockAttMgr);
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      const args = streamChatMock.mock.calls[0];
+      const attachmentMeta = args[args.length - 1];
+      expect(attachmentMeta).toEqual([
+        { name: 'test.png', type: 'image/png', size: 1234 },
+        { name: 'log.txt', type: 'text/plain', size: 567 },
+      ]);
+    });
+
+    it('does not pass attachment_meta when no attachments exist', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, _onText, _onSummary, onDone) => {
+          onDone();
+        },
+      );
+
+      const mockAttMgr = createMockAttachmentManager([]);
+
+      const manager = makeManager(20, mockAttMgr);
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      const args = streamChatMock.mock.calls[0];
+      const attachmentMeta = args[args.length - 1];
+      expect(attachmentMeta).toBeUndefined();
+    });
+
+    it('does not pass attachment_meta when no attachment manager is provided', async () => {
+      const streamChatMock = vi.mocked(chatTransport.streamChat);
+      streamChatMock.mockImplementation(
+        async (_ep, _msgs, _ctx, _headers, _onText, _onSummary, onDone) => {
+          onDone();
+        },
+      );
+
+      const manager = makeManager();
+      manager.start(mockDiagnostic);
+
+      await vi.waitFor(() => {
+        expect(streamChatMock).toHaveBeenCalledOnce();
+      });
+
+      const args = streamChatMock.mock.calls[0];
+      const attachmentMeta = args[args.length - 1];
+      expect(attachmentMeta).toBeUndefined();
     });
   });
 

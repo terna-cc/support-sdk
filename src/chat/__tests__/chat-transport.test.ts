@@ -460,6 +460,74 @@ describe('streamChat', () => {
     expect(onError).toHaveBeenCalledWith('');
   });
 
+  it('includes attachment_meta in request body when provided', async () => {
+    let capturedBody = '';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init: RequestInit) => {
+        capturedBody = init.body as string;
+        return Promise.resolve(
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
+        );
+      }),
+    );
+
+    const meta = [
+      { name: 'screenshot.png', type: 'image/png', size: 12345 },
+      { name: 'log.txt', type: 'text/plain', size: 678 },
+    ];
+
+    await streamChat(
+      'https://api.test.com',
+      [],
+      null,
+      new Headers(),
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new AbortController().signal,
+      undefined,
+      undefined,
+      meta,
+    );
+
+    const body = JSON.parse(capturedBody);
+    expect(body.attachment_meta).toEqual(meta);
+  });
+
+  it('omits attachment_meta from request body when not provided', async () => {
+    let capturedBody = '';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init: RequestInit) => {
+        capturedBody = init.body as string;
+        return Promise.resolve(
+          new Response(createReadableStream(['data: {"type":"done"}\n\n']), {
+            status: 200,
+          }),
+        );
+      }),
+    );
+
+    await streamChat(
+      'https://api.test.com',
+      [],
+      null,
+      new Headers(),
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      new AbortController().signal,
+    );
+
+    const body = JSON.parse(capturedBody);
+    expect(body.attachment_meta).toBeUndefined();
+  });
+
   it('omits locale from request body when not provided', async () => {
     let capturedBody = '';
 
