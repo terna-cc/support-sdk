@@ -57,10 +57,7 @@ const mockSummary: ReportSummary = {
   tags: [],
 };
 
-function makeManager(
-  maxMessages = 20,
-  attachmentManager?: AttachmentManager,
-) {
+function makeManager(maxMessages = 20, attachmentManager?: AttachmentManager) {
   return createChatManager({
     endpoint: 'https://api.test.com',
     auth: { type: 'none' },
