@@ -520,6 +520,7 @@ export function createReviewModal(
   function open(data: ModalData): void {
     if (host) close();
     currentData = data;
+    checkedState.clear();
 
     host = document.createElement('div');
     host.setAttribute('data-support-modal', '');
