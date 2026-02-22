@@ -10,6 +10,7 @@ import type {
 
 export interface PerformanceCapture {
   getMetrics(): PerformanceMetrics;
+  clear(): void;
   destroy(): void;
 }
 
@@ -154,6 +155,10 @@ export function createPerformanceCapture(
     };
   }
 
+  function clear(): void {
+    longTaskBuffer.clear();
+  }
+
   function destroy(): void {
     for (const observer of observers) {
       observer.disconnect();
@@ -161,5 +166,5 @@ export function createPerformanceCapture(
     observers.length = 0;
   }
 
-  return { getMetrics, destroy };
+  return { getMetrics, clear, destroy };
 }

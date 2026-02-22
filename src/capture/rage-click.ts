@@ -13,6 +13,7 @@ export interface RageClick {
 
 export interface RageClickCapture {
   getDetected(): RageClick[];
+  clear(): void;
   destroy(): void;
 }
 
@@ -125,11 +126,17 @@ export function createRageClickCapture(config?: {
     return buffer.getAll();
   }
 
+  function clear(): void {
+    buffer.clear();
+    recentClicks.length = 0;
+    lastRageClickTime.clear();
+  }
+
   function destroy(): void {
     document.removeEventListener('click', handleClick, true);
     recentClicks.length = 0;
     lastRageClickTime.clear();
   }
 
-  return { getDetected, destroy };
+  return { getDetected, clear, destroy };
 }

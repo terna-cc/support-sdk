@@ -527,6 +527,74 @@ export const modalStyles = `
     border: 1px solid #bbf7d0;
   }
 
+  /* ── Confirmation view (post-submission) ── */
+
+  .confirmation-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px 32px;
+    text-align: center;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .confirmation-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: confirmation-pop 0.3s ease-out;
+  }
+
+  .confirmation-icon svg {
+    width: 28px;
+    height: 28px;
+    color: var(--support-success);
+  }
+
+  @keyframes confirmation-pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .confirmation-message {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--support-text);
+    max-width: 280px;
+  }
+
+  .confirmation-close-btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--support-font);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 24px;
+    border-radius: var(--support-radius);
+    background: var(--support-bg-secondary);
+    color: var(--support-text);
+    border: 1px solid var(--support-border);
+    transition: background 0.1s;
+    margin-top: 8px;
+  }
+
+  .confirmation-close-btn:hover {
+    background: var(--support-border);
+  }
+
+  .confirmation-close-btn:focus-visible {
+    outline: 2px solid var(--support-primary-color);
+    outline-offset: 2px;
+  }
+
   @media (max-width: 480px) {
     .modal-content {
       left: 8px;

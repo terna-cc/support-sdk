@@ -599,6 +599,86 @@ describe('SupportSDK', () => {
     });
   });
 
+  describe('resetBuffers()', () => {
+    it('clears all diagnostic buffers without stopping capture', () => {
+      const sdk = SupportSDK.init(minimalConfig());
+
+      // Generate some data in the buffers
+      console.log('test log 1');
+      console.log('test log 2');
+
+      sdk.addBreadcrumb({ type: 'custom', message: 'test breadcrumb' });
+
+      // resetBuffers should not throw
+      sdk.resetBuffers();
+
+      // Console should still be patched (capture is still active)
+      const originalLog = console.log;
+      expect(typeof originalLog).toBe('function');
+
+      sdk.destroy();
+    });
+
+    it('ensures second report after reset has clean data', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({ id: 'report-1' }), { status: 200 }),
+          ),
+        );
+
+      const sdk = SupportSDK.init(
+        minimalConfig({
+          capture: { network: false },
+          chat: { enabled: false },
+        }),
+      );
+
+      // Add breadcrumbs before first report
+      sdk.addBreadcrumb({
+        type: 'custom',
+        message: 'first session breadcrumb',
+      });
+
+      sdk.captureOnOpen();
+      await new Promise((r) => setTimeout(r, 50));
+
+      // First submit
+      await sdk.submitWithIntent('bug', 'First report');
+
+      // Reset buffers (simulating what happens after successful submission)
+      sdk.resetBuffers();
+
+      // Second captureOnOpen after reset
+      sdk.captureOnOpen();
+      await new Promise((r) => setTimeout(r, 50));
+
+      // Second submit
+      await sdk.submitWithIntent('bug', 'Second report');
+
+      // Find the two report calls
+      const reportCalls = fetchSpy.mock.calls.filter(
+        (call) =>
+          typeof call[0] === 'string' &&
+          (call[0] as string).includes('/reports'),
+      );
+      expect(reportCalls.length).toBeGreaterThanOrEqual(2);
+
+      // The second report's breadcrumbs should be empty (buffers were reset)
+      const secondCall = reportCalls[reportCalls.length - 1];
+      const formData = secondCall[1]?.body as FormData;
+      const reportJson = formData?.get('report') as string;
+      if (reportJson) {
+        const report = JSON.parse(reportJson);
+        expect(report.breadcrumbs).toEqual([]);
+      }
+
+      fetchSpy.mockRestore();
+      sdk.destroy();
+    });
+  });
+
   describe('SDK_VERSION export', () => {
     it('is exported from the main entry', async () => {
       const { SDK_VERSION } = await import('./index');

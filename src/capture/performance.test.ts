@@ -307,6 +307,46 @@ describe('createPerformanceCapture', () => {
     });
   });
 
+  describe('clear()', () => {
+    it('resets long task buffer', () => {
+      vi.spyOn(Date, 'now').mockReturnValue(1000);
+
+      const capture = createPerformanceCapture();
+
+      triggerObserver('longtask', [
+        { duration: 80, startTime: 500 },
+        { duration: 120, startTime: 600 },
+      ]);
+
+      expect(capture.getMetrics().longTasks).toHaveLength(2);
+
+      capture.clear();
+
+      expect(capture.getMetrics().longTasks).toHaveLength(0);
+
+      vi.restoreAllMocks();
+      capture.destroy();
+    });
+
+    it('allows new long tasks to be captured after clear', () => {
+      vi.spyOn(Date, 'now').mockReturnValue(2000);
+
+      const capture = createPerformanceCapture();
+
+      triggerObserver('longtask', [{ duration: 80, startTime: 500 }]);
+      expect(capture.getMetrics().longTasks).toHaveLength(1);
+
+      capture.clear();
+
+      triggerObserver('longtask', [{ duration: 100, startTime: 700 }]);
+      expect(capture.getMetrics().longTasks).toHaveLength(1);
+      expect(capture.getMetrics().longTasks[0].duration).toBe(100);
+
+      vi.restoreAllMocks();
+      capture.destroy();
+    });
+  });
+
   describe('destroy()', () => {
     it('disconnects all observers', () => {
       const capture = createPerformanceCapture();

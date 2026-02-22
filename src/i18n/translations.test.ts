@@ -19,6 +19,10 @@ describe('translations', () => {
       'There was a problem processing your message. Please try again.',
     );
     expect(translations['en'].retryButton).toBe('Try again');
+    expect(translations['en'].reportSubmitted).toBe(
+      'Your report has been submitted. Our team will review it shortly. Thank you!',
+    );
+    expect(translations['en'].reportClose).toBe('Close');
   });
 
   it('has Spanish translations', () => {
@@ -40,6 +44,10 @@ describe('translations', () => {
       'Hubo un problema al procesar tu mensaje. Por favor intenta de nuevo.',
     );
     expect(translations['es'].retryButton).toBe('Intentar de nuevo');
+    expect(translations['es'].reportSubmitted).toBe(
+      'Tu reporte fue enviado. Nuestro equipo lo revisará pronto. ¡Gracias!',
+    );
+    expect(translations['es'].reportClose).toBe('Cerrar');
   });
 });
 
@@ -94,6 +102,8 @@ describe('getTranslations', () => {
     expect(t).toHaveProperty('submitFailed');
     expect(t).toHaveProperty('errorMessage');
     expect(t).toHaveProperty('retryButton');
+    expect(t).toHaveProperty('reportSubmitted');
+    expect(t).toHaveProperty('reportClose');
   });
 
   it('returns all expected keys for Spanish', () => {
@@ -116,5 +126,7 @@ describe('getTranslations', () => {
     expect(t).toHaveProperty('submitFailed');
     expect(t).toHaveProperty('errorMessage');
     expect(t).toHaveProperty('retryButton');
+    expect(t).toHaveProperty('reportSubmitted');
+    expect(t).toHaveProperty('reportClose');
   });
 });

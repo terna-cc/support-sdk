@@ -216,6 +216,9 @@ export class SupportSDK {
           if (!result.success) {
             throw new Error(result.error?.message ?? 'Failed to send report');
           }
+
+          // Reset diagnostic buffers so the next report starts clean
+          this.resetBuffers();
         },
         onCancel: () => {
           this.frozenErrorInfo = null;
@@ -546,6 +549,23 @@ export class SupportSDK {
    * Clear pending diagnostics without submitting (prevent memory leaks).
    */
   clearPendingDiagnostics(): void {
+    this._pendingDiagnostics = null;
+  }
+
+  /**
+   * Reset all diagnostic event buffers after a successful report submission.
+   * Clears accumulated console logs, network logs, breadcrumbs, rage clicks,
+   * and long tasks so the next report starts with a clean slate.
+   *
+   * Does NOT clear: browser info (static), SDK config, or user context.
+   */
+  resetBuffers(): void {
+    this.consoleCapture?.clear();
+    this.networkCapture?.clear();
+    this.breadcrumbCapture?.clear();
+    this.rageClickCapture?.clear();
+    this.performanceCapture?.clear();
+    this.frozenErrorInfo = null;
     this._pendingDiagnostics = null;
   }
 

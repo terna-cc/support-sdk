@@ -581,7 +581,7 @@ describe('createReviewModal', () => {
     });
   });
 
-  it('shows success message after successful submission', async () => {
+  it('shows confirmation view after successful submission', async () => {
     const modal = createReviewModal(config, getTranslations('en'), callbacks);
     modal.open({ consoleLogs: makeConsoleLogs(1) });
 
@@ -591,10 +591,19 @@ describe('createReviewModal', () => {
     sendBtn.click();
 
     await vi.waitFor(() => {
-      const statusMsg = getShadow()!.querySelector('.status-message.success');
-      expect(statusMsg).not.toBeNull();
-      expect(statusMsg!.textContent).toBe('Report sent!');
+      const confirmationView = getShadow()!.querySelector('.confirmation-view');
+      expect(confirmationView).not.toBeNull();
     });
+
+    const message = getShadow()!.querySelector('.confirmation-message');
+    expect(message).not.toBeNull();
+    expect(message!.textContent).toBe(
+      'Your report has been submitted. Our team will review it shortly. Thank you!',
+    );
+
+    const closeBtn = getShadow()!.querySelector('.confirmation-close-btn');
+    expect(closeBtn).not.toBeNull();
+    expect(closeBtn!.textContent).toBe('Close');
   });
 
   it('sets role=dialog on backdrop container', () => {
@@ -708,6 +717,136 @@ describe('createReviewModal', () => {
 
       modal.close();
     }
+  });
+
+  describe('confirmation view', () => {
+    it('auto-closes after 4 seconds', async () => {
+      vi.useFakeTimers();
+      const onCloseSpy = vi.fn();
+      const modal = createReviewModal(config, getTranslations('en'), {
+        ...callbacks,
+        onClose: onCloseSpy,
+      });
+      modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+      const sendBtn = getShadow()!.querySelector(
+        '.btn-primary',
+      ) as HTMLButtonElement;
+      sendBtn.click();
+
+      // Flush microtask queue to let the async onSubmit resolve
+      // and showConfirmation to be called
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Confirmation view should now be showing
+      expect(getShadow()!.querySelector('.confirmation-view')).not.toBeNull();
+
+      // Advance to trigger auto-close
+      vi.advanceTimersByTime(4000);
+
+      // Modal should be closed
+      expect(getHost()).toBeNull();
+      expect(onCloseSpy).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('manual close button dismisses immediately and clears auto-close timer', async () => {
+      vi.useFakeTimers();
+      const onCloseSpy = vi.fn();
+      const modal = createReviewModal(config, getTranslations('en'), {
+        ...callbacks,
+        onClose: onCloseSpy,
+      });
+      modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+      const sendBtn = getShadow()!.querySelector(
+        '.btn-primary',
+      ) as HTMLButtonElement;
+      sendBtn.click();
+
+      // Flush microtask queue to let the async onSubmit resolve
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Click the close button on confirmation view
+      const closeBtn = getShadow()!.querySelector(
+        '.confirmation-close-btn',
+      ) as HTMLButtonElement;
+      expect(closeBtn).not.toBeNull();
+      closeBtn.click();
+
+      // Modal should be closed immediately
+      expect(getHost()).toBeNull();
+      expect(onCloseSpy).toHaveBeenCalledTimes(1);
+
+      // Advancing timer should not cause issues (no double-close)
+      vi.advanceTimersByTime(5000);
+      expect(onCloseSpy).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('shows Spanish confirmation message when locale is es', async () => {
+      const modal = createReviewModal(config, getTranslations('es'), callbacks);
+      modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+      const sendBtn = getShadow()!.querySelector(
+        '.btn-primary',
+      ) as HTMLButtonElement;
+      sendBtn.click();
+
+      await vi.waitFor(() => {
+        const confirmationView =
+          getShadow()!.querySelector('.confirmation-view');
+        expect(confirmationView).not.toBeNull();
+      });
+
+      const message = getShadow()!.querySelector('.confirmation-message');
+      expect(message!.textContent).toBe(
+        'Tu reporte fue enviado. Nuestro equipo lo revisará pronto. ¡Gracias!',
+      );
+
+      const closeBtn = getShadow()!.querySelector('.confirmation-close-btn');
+      expect(closeBtn!.textContent).toBe('Cerrar');
+    });
+
+    it('replaces modal content with confirmation (not overlay)', async () => {
+      const modal = createReviewModal(config, getTranslations('en'), callbacks);
+      modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+      const sendBtn = getShadow()!.querySelector(
+        '.btn-primary',
+      ) as HTMLButtonElement;
+      sendBtn.click();
+
+      await vi.waitFor(() => {
+        const confirmationView =
+          getShadow()!.querySelector('.confirmation-view');
+        expect(confirmationView).not.toBeNull();
+      });
+
+      // Original form elements should no longer be in the DOM
+      expect(getShadow()!.querySelector('.description-textarea')).toBeNull();
+      expect(getShadow()!.querySelector('.category-list')).toBeNull();
+      expect(getShadow()!.querySelector('.modal-footer')).toBeNull();
+    });
+
+    it('includes a checkmark icon', async () => {
+      const modal = createReviewModal(config, getTranslations('en'), callbacks);
+      modal.open({ consoleLogs: makeConsoleLogs(1) });
+
+      const sendBtn = getShadow()!.querySelector(
+        '.btn-primary',
+      ) as HTMLButtonElement;
+      sendBtn.click();
+
+      await vi.waitFor(() => {
+        const iconEl = getShadow()!.querySelector('.confirmation-icon');
+        expect(iconEl).not.toBeNull();
+        const svg = iconEl!.querySelector('svg');
+        expect(svg).not.toBeNull();
+      });
+    });
   });
 
   describe('chat mode diagnostic context', () => {
