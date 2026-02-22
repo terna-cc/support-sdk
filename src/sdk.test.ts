@@ -636,7 +636,10 @@ describe('SupportSDK', () => {
       );
 
       // Add breadcrumbs before first report
-      sdk.addBreadcrumb({ type: 'custom', message: 'first session breadcrumb' });
+      sdk.addBreadcrumb({
+        type: 'custom',
+        message: 'first session breadcrumb',
+      });
 
       sdk.captureOnOpen();
       await new Promise((r) => setTimeout(r, 50));

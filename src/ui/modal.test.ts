@@ -591,8 +591,7 @@ describe('createReviewModal', () => {
     sendBtn.click();
 
     await vi.waitFor(() => {
-      const confirmationView =
-        getShadow()!.querySelector('.confirmation-view');
+      const confirmationView = getShadow()!.querySelector('.confirmation-view');
       expect(confirmationView).not.toBeNull();
     });
 
@@ -788,11 +787,7 @@ describe('createReviewModal', () => {
     });
 
     it('shows Spanish confirmation message when locale is es', async () => {
-      const modal = createReviewModal(
-        config,
-        getTranslations('es'),
-        callbacks,
-      );
+      const modal = createReviewModal(config, getTranslations('es'), callbacks);
       modal.open({ consoleLogs: makeConsoleLogs(1) });
 
       const sendBtn = getShadow()!.querySelector(
