@@ -564,10 +564,6 @@ export function createReviewModal(
     closeBtn.type = 'button';
     closeBtn.textContent = translations.reportClose;
     closeBtn.addEventListener('click', () => {
-      if (autoCloseTimer) {
-        clearTimeout(autoCloseTimer);
-        autoCloseTimer = null;
-      }
       close();
     });
     confirmationView.appendChild(closeBtn);
