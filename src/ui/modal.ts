@@ -213,6 +213,9 @@ export function createReviewModal(
   // Attachment support
   let attachmentMgr: AttachmentManager | null = null;
 
+  // Auto-close timer for confirmation view
+  let autoCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Track checkbox state per category key
   const checkedState = new Map<string, boolean>();
 
@@ -453,8 +456,8 @@ export function createReviewModal(
 
           manager.reset();
 
-          // Close after brief delay on success
-          setTimeout(() => closeFn(), 1500);
+          // Show confirmation view instead of closing immediately
+          showConfirmation();
         },
         onCancel: () => {
           closeFn();
@@ -517,6 +520,68 @@ export function createReviewModal(
         closeBtn.focus();
       },
     };
+  }
+
+  function showConfirmation(): void {
+    if (!shadow) return;
+
+    // Clear existing content from the modal content container
+    const content = shadow.querySelector('.modal-content');
+    if (!content) return;
+    content.innerHTML = '';
+
+    // Build confirmation view
+    const confirmationView = el('div', 'confirmation-view');
+
+    // Checkmark icon
+    const iconWrapper = el('div', 'confirmation-icon');
+    const checkSvg = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg',
+    );
+    checkSvg.setAttribute('viewBox', '0 0 24 24');
+    checkSvg.setAttribute('fill', 'none');
+    checkSvg.setAttribute('stroke', 'currentColor');
+    checkSvg.setAttribute('stroke-width', '2.5');
+    checkSvg.setAttribute('stroke-linecap', 'round');
+    checkSvg.setAttribute('stroke-linejoin', 'round');
+    const checkPath = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'path',
+    );
+    checkPath.setAttribute('d', 'M20 6L9 17l-5-5');
+    checkSvg.appendChild(checkPath);
+    iconWrapper.appendChild(checkSvg);
+    confirmationView.appendChild(iconWrapper);
+
+    // Message
+    const message = el('div', 'confirmation-message');
+    message.textContent = translations.reportSubmitted;
+    confirmationView.appendChild(message);
+
+    // Close button
+    const closeBtn = el('button', 'confirmation-close-btn');
+    closeBtn.type = 'button';
+    closeBtn.textContent = translations.reportClose;
+    closeBtn.addEventListener('click', () => {
+      if (autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+        autoCloseTimer = null;
+      }
+      close();
+    });
+    confirmationView.appendChild(closeBtn);
+
+    content.appendChild(confirmationView);
+
+    // Auto-close after 4 seconds
+    autoCloseTimer = setTimeout(() => {
+      autoCloseTimer = null;
+      close();
+    }, 4000);
+
+    // Focus the close button
+    closeBtn.focus();
   }
 
   function open(data: ModalData): void {
@@ -787,13 +852,8 @@ export function createReviewModal(
 
         await callbacks.onSubmit({ report, screenshot });
 
-        // Success
-        const successMsg = el('div', 'status-message success');
-        successMsg.textContent = 'Report sent!';
-        statusArea.appendChild(successMsg);
-
-        // Close after brief delay
-        setTimeout(() => close(), 1500);
+        // Show confirmation view instead of closing immediately
+        showConfirmation();
       } catch (err) {
         // Error
         const errorMsg = el('div', 'status-message error');
@@ -835,6 +895,10 @@ export function createReviewModal(
   }
 
   function close(): void {
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+      autoCloseTimer = null;
+    }
     if (chatView) {
       chatView.destroy();
       chatView = null;

@@ -277,6 +277,53 @@ describe('createRageClickCapture', () => {
     });
   });
 
+  describe('clear', () => {
+    it('resets all detected rage clicks', () => {
+      capture = createRageClickCapture();
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Submit';
+      document.body.appendChild(btn);
+
+      clickAt(100, 100, btn);
+      clickAt(101, 101, btn);
+      clickAt(102, 102, btn);
+
+      expect(capture.getDetected()).toHaveLength(1);
+
+      capture.clear();
+
+      expect(capture.getDetected()).toHaveLength(0);
+
+      document.body.removeChild(btn);
+    });
+
+    it('allows new detections after clear', () => {
+      capture = createRageClickCapture();
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Submit';
+      document.body.appendChild(btn);
+
+      clickAt(100, 100, btn);
+      clickAt(101, 101, btn);
+      clickAt(102, 102, btn);
+
+      expect(capture.getDetected()).toHaveLength(1);
+
+      capture.clear();
+
+      // New rage clicks should be detected
+      clickAt(200, 200, btn);
+      clickAt(201, 201, btn);
+      clickAt(202, 202, btn);
+
+      expect(capture.getDetected()).toHaveLength(1);
+
+      document.body.removeChild(btn);
+    });
+  });
+
   describe('RageClick entry fields', () => {
     it('includes all required fields', () => {
       capture = createRageClickCapture();
